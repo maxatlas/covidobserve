@@ -1,5 +1,0 @@
-input files: 1. Raw data
-output files:
-  category 1 - tweets with geo-coordinates located in Australia
-  category 2 - tweets mentioned cities in Australia
-  category 3 - tweets mentioned Australia
