@@ -1,9 +1,0 @@
-#sudo -H gedit /etc/environment
-
-#Twitter API
-TWITTER_API_KEY="OHE8Z9gij8a5S0nM2KUoBksfN"
-TWITTER_API_SECRET_KEY="HkrOJLExLlJQO7cPXjBBpDlFV5RY3mNIGzakkIVsL53Kzr2bMX"
-
-#Stanford NER Classifier
-CLASSPATH="~/Desktop/tweetobserve/lib/python3.8/site-packages/stanford-ner-4.0.0"
-STANFORD_MODELS="~/Desktop/tweetobserve/lib/python3.8/site-packages/stanford-ner-4.0.0/classifiers"
