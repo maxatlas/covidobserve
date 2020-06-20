@@ -20,7 +20,7 @@ def main(path="4.Get Tweets/full_text", ner_folder="5.Get NER Entities", from_i=
 
 		tweets = json.load(open(pa.join(path, file_name)))
 		
-		i, page_number, l = 0,1, []
+		i, page_number = 0,1
 		
 		print("Tweets loaded.")
 
@@ -39,6 +39,8 @@ def main(path="4.Get Tweets/full_text", ner_folder="5.Get NER Entities", from_i=
 			if not i: json.dump(list(entities), open("%s/%s.json" %(ner_folder, file_name[:-5]), "w"))
 
 			else: json.dump(list(entities), open("%s/%s_%i.json" %(ner_folder, file_name[:-5], page_number-1), "w"))
+
+			del entities, tweets_limited
 
 			print("save for %s_%i of %i tweets." %(file_name[:-5], page_number, len(tweets_limited.split("\n\n"))))
 
