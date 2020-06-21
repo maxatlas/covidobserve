@@ -47,6 +47,8 @@ def main(path="4.Get Tweets/full_text", ner_folder="5.Get NER Entities", from_i=
 			i+=save_per_tweets
 			page_number+=1
 
+		del tweets
+
 			
 		print("Done for %s." %(file_name))
 
