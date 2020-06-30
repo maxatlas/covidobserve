@@ -39,12 +39,12 @@ def filter(tweet):
 		if 'city' in tweet['geo'].values(): tweets[tweet['geo']['city']].append(tweet['id'])
 
 
-def main(filterfunc, keyword, file_path, output_folder="1.Get Tweet Ids"):
+def main(filterfunc, keyword, file_path, output_folder="2.Filter by Location"):
 	'''
 	filter
 	'''
 	#load file
-	tweet_ids = defaultdict(set)
+	tweet_ids = defaultdict(list)
 	file_name = file_path.split("/")[-1]
 	print("\n"+file_path)
 
@@ -55,8 +55,8 @@ def main(filterfunc, keyword, file_path, output_folder="1.Get Tweet Ids"):
 		t_id = tweet_meta['tweet_id']
 
 		filtered = filterfunc(tweet_meta, keyword)
-		if filtered is True: tweet_ids["nation-wide"].add(t_id)
-		elif filtered: tweet_ids[filtered].add(t_id)
+		if filtered is True: tweet_ids["nation-wide"].append(t_id)
+		elif filtered: tweet_ids[filtered].append(t_id)
 
 	json.dump(tweet_ids, open("%s.json" %(p.join(output_folder, file_name[:-5])), 'w'))
 	print("File saved.")

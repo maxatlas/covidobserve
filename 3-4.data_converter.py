@@ -9,20 +9,20 @@ from pprint import pprint
 from os import listdir, path as p
 from collections import defaultdict
 
-def id2tweets(path = "cat3"):
+def id2tweets(from_path="3.Get English Tweet Ids/cat3", to_path="4.Get Tweets"):
 	
 	files = listdir(path)
 	
-	for from_file in files[-3:]:
+	for from_file in files:
 		print(from_file)
 		
-		data = json.load(open(p.join(path, from_file)))
+		data = json.load(open(p.join(from_path, from_file)))
 		date = from_file.split("_")[-1][:-5]
 
 		filetype="txt"
-		try: to_file = open('nation-wide_ids/%s.%s' %(date, filetype), "x")
+		try: to_file = open('%s/%s.%s' %(to_path, date, filetype), "x")
 		except FileExistsError as e: print(e)
-		to_file = open('nation-wide_ids/%s.%s' %(date, filetype), "w")
+		to_file = open('%s/%s.%s' %(to_path, date, filetype), "w")
 		
 		file_i, i = 0, 0
 		for tweet_id in data: 
@@ -30,34 +30,34 @@ def id2tweets(path = "cat3"):
 				i=0
 				file_i+=1
 				to_file.close()
-				to_file = open('nation-wide_ids/%s_%i.%s' %(date, file_i, filetype), "x")
+				to_file = open('%s/%s_%i.%s' %(to_path, date, file_i, filetype), "x")
 			to_file.write(tweet_id+"\n")
 			i+=1 
 		to_file.close()
 
-def tweets2text(path="nation-wide_tweets", file=None):
+def tweets2text(from_path="4.Get Tweets", to_path="5.Clean Tweets/sentences", file=None):
 	'''
 		output is a list of full_text.
 	'''
-	files = [file] if file else listdir(path)
+	files = [file] if file else listdir(from_path)
 
-	for file in files:
+	for file in files[12:]:
 		print(file)
-		tweets = open(p.join(path, file))
+		tweets = open(p.join(from_path, file))
 		tweets = tweets.readlines()
 		print("Tweets read.")
 		texts = []
 		for tweet in tweets:
 			tweet = json.loads(tweet)
-			if tweet['lang']=='en': texts.append(tweet['full_text'])
+			if tweet['lang']=='en': texts.append(tweet['retweeted_status']['full_text'] if 'retweeted_status' in tweet.keys() else tweet['full_text'])
 
-		json.dump(texts, open("nation-wide_tweets_cleaned/%s" %file, "w"))
+		json.dump(texts, open("%s/%s" %(to_path, file), "w"))
 		print("Done for %s. Total tweets: %i" %(file, len(texts)))
 		
 
 if __name__ == '__main__':
 	# id2tweets()
-	tweets2text(file="2020-04-11_1.json")
+	tweets2text()
 
 '''
 twarc hydrate nation-wide_ids/2020-03-31.txt > nation-wide_tweets/2020-03-31.json
