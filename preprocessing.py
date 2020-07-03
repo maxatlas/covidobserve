@@ -25,6 +25,7 @@ def replace_all(NERs, replacement_dict):
 		
 		realDonaldTrump -> Donald Trump
 		realdonaldtrump -> realdonaldtrump
+		TESTED
 		'''
 		return get_name(token)
 
@@ -47,6 +48,7 @@ def texts2NER(texts, exclude_type=[]):
 		text: tweet full_text.
 
 		return [[NER]] index corresponds to [text], hence traceable
+		TESTED
 	'''
 	NER_list = []
 
@@ -59,7 +61,6 @@ def texts2NER(texts, exclude_type=[]):
 		if e.get("type") not in exclude_type:
 			while len(NER_list)<e_list_i+1: NER_list.append([])
 			NER_list[e_list_i].append(e.get("text"))
-	
 	return NER_list
 
 def get_NERs(text):
@@ -67,6 +68,9 @@ def get_NERs(text):
 	return pipe(text).entities
 
 def NER2texts(e, texts):
+	'''
+		TESTED
+	'''
 	text = delim.join(texts)
 	i = get_NER_list_index(e.end_char, text)
 	return texts[i]

@@ -4,26 +4,23 @@ import numpy as np
 
 from pprint import pprint
 
-def get_tf_table(doc):
+def get_e_sig(doc):
 	'''
 		doc: [NER entity].
-		return pd.Series of {token: counts}.
+		return pd.Series of {token: normalized}.
+		TESTED
 	'''
-	return pd.Series(doc).value_counts()
+	return pd.Series(doc).value_counts(normalize=True)
 
-def get_tf_table_mean(docs):
+def get_e_sig_mean(docs):
+	'''
+		TESTED
+	'''
 	n = len(docs)
-	out = pd.Series([])
-	for doc in docs: out = get_tf_table(doc).add(out, fill_value=0)
-	return out
+	out = pd.Series([],dtype="float64")
+	for doc in docs: out = out.add(get_e_sig(doc), fill_value=0)
 
-def get_entity_significance(tf, entity):
-	'''
-		tf: output of get_tf_table.
-	'''
-	tf_entity = tf[entity]
-	tf_all = tf.sum()
-	return tf_entity/tf_all
+	return out/n
 
 def get_edge_weight_per_doc(e1, e2, tf):
 	e1_tf, e2_tf = tf.get(e1), tf.get(e2)
@@ -60,6 +57,8 @@ if __name__ == '__main__':
 	from preprocessing import texts2NER
 	sample_texts = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
 	l = texts2NER(sample_texts)
+	# out = get_e_sig_mean(l)
+	# pprint(out)
 	for NERs in l:
-		pprint(get_tf_table_mean(NERs))
+		pprint(get_e_sig(NERs))
 	
