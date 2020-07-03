@@ -16,16 +16,17 @@ def get_name(e):
 		realDonaldTrump -> Donald Trump
 		realdonaldtrump -> realdonaldtrump
 	'''
+	
+	if is_person(e):
+		e = e[1:]
 
-	assert is_person(e), "Input needs to start with '@'. E.g @realdonaldtrump."
-	e = e[1:]
+		if e:
+			out = re.findall("[A-Z][a-z]+", e)# *: Scott Morrison P M; +: Scott Morrison
+			out = out if out else [e]
+		else: out = []
 
-	if e:
-		out = re.findall("[A-Z][a-z]+", e)
-		out = out if out else [e]
-	else: out = []
-
-	return out
+		return out
+	return [e]
 
 def ner_sent(sent, report=False):
 	if report: print("Start sending NER...")

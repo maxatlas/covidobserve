@@ -1,5 +1,8 @@
+import json
 import pandas as pd
 import numpy as np
+
+from pprint import pprint
 
 def get_tf_table(doc):
 	'''
@@ -7,6 +10,12 @@ def get_tf_table(doc):
 		return pd.Series of {token: counts}.
 	'''
 	return pd.Series(doc).value_counts()
+
+def get_tf_table_mean(docs):
+	n = len(docs)
+	out = pd.Series([])
+	for doc in docs: out = get_tf_table(doc).add(out, fill_value=0)
+	return out
 
 def get_entity_significance(tf, entity):
 	'''
@@ -40,11 +49,17 @@ def get_knowledge_graph(docs):
 		查pandas documentation，应该有简易办法 	
 	'''
 
+
 	return {
-		"entity size":,
-		"edge weight":
+		"entity size":1,
+		"edge weight":2
 	}
 
 
 if __name__ == '__main__':
-	main()
+	from preprocessing import texts2NER
+	sample_texts = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
+	l = texts2NER(sample_texts)
+	for NERs in l:
+		pprint(get_tf_table_mean(NERs))
+	
