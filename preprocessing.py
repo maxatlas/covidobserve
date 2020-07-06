@@ -1,4 +1,5 @@
 '''
+	Pipeline phase 1
 
 '''
 import stanza
@@ -60,7 +61,7 @@ def texts2NER(texts, exclude_type=[]):
 		e_list_i = get_NER_list_index(e.get("end_char"), text)
 		if e.get("type") not in exclude_type:
 			while len(NER_list)<e_list_i+1: NER_list.append([])
-			NER_list[e_list_i].append(e.get("text"))
+			NER_list[e_list_i].append(e)
 	return NER_list
 
 def get_NERs(text):
