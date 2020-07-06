@@ -1,3 +1,7 @@
+'''
+	Pipeline Phase 1-1
+	Input: CrisisNLP data format path. A list of dictionaries indicating location data.
+'''
 import json
 import time
 import stanza
@@ -6,10 +10,6 @@ from twarc import Twarc
 from os import listdir, path as p
 from os import environ as e
 from preprocess_config import filter_by_loc, filter_en, filter_by_au
-
-'''
-	Input: CrisisNLP data format path. A list of dictionaries indicating location data.
-'''
 
 def main(file_folder, file_name, loc_folder="2.Filter by Location", text_folder="4.Get Tweets", ner_folder="5.Get NER Entities", save_per_tweets=500000, ner_gpu=True):
 	

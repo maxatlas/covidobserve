@@ -21,10 +21,10 @@ import numpy as np
 from pprint import pprint
 
 
-def get_e_text(docs):
-	def get_e_text(doc):
+def get_NER_text(docs):
+	def get_text(doc):
 		for e in doc: yield e.get("text")
-	return [list(get_e_text(doc)) for doc in docs]
+	return [list(get_text(doc)) for doc in docs]
 
 def get_e_sig(doc):
 	'''
@@ -82,7 +82,7 @@ def get_knowledge_graph(texts, e_only=False, edge_only=False):
 		TESTED.
 	'''
 	NERs = texts2NER(texts)
-	docs = get_e_text(NERs)
+	docs = get_NER_text(NERs)
 
 	if e_only: return get_e_sig_mean(docs)
 	elif edge_only: return get_edge_weights_all_docs(docs)

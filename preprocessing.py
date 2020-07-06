@@ -1,5 +1,5 @@
 '''
-	Pipeline phase 1
+	Pipeline phase 1-2
 
 '''
 import stanza
