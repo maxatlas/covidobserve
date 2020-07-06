@@ -70,7 +70,7 @@ def get_edge_weights_all_docs(docs):
 		out = out.add(get_edge_weights_per_doc(tf), fill_value=0)
 	return out
 
-def get_knowledge_graph(texts):
+def get_knowledge_graph(texts, e_only=False, edge_only=False):
 	'''
 		Get knowledge graph.
 		
@@ -84,10 +84,13 @@ def get_knowledge_graph(texts):
 	NERs = texts2NER(texts)
 	docs = get_e_text(NERs)
 
-	return {
-		"e_sig_mean": get_e_sig_mean(docs),
-		"edge_weights": get_edge_weights_all_docs(docs)
-	}
+	if e_only: return get_e_sig_mean(docs)
+	elif edge_only: return get_edge_weights_all_docs(docs)
+
+	else: return {
+				"e_sigs_mean": get_e_sig_mean(docs),
+				"edge_weights": get_edge_weights_all_docs(docs)
+			}
 
 
 if __name__ == '__main__':
