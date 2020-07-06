@@ -9,7 +9,6 @@ from preprocess_config import filter_by_loc, filter_en, filter_by_au
 
 '''
 	Input: CrisisNLP data format path. A list of dictionaries indicating location data.
-	TODO: twarc command returns empty generator.
 '''
 
 def main(file_folder, file_name, loc_folder="2.Filter by Location", text_folder="4.Get Tweets", ner_folder="5.Get NER Entities", save_per_tweets=500000, ner_gpu=True):
@@ -47,8 +46,7 @@ def main(file_folder, file_name, loc_folder="2.Filter by Location", text_folder=
 	#Step 3. Filter by English
 	print("Start filter by English and get full_text.")
 	full_texts = []
-	for tweet in tweets: 
-		if filter_en(tweet)[1]: full_texts.append(filter_en(tweet)[1])
+	for tweet in tweets: full_texts.append(tweet)
 	tweet_number = len(full_texts)
 	del tweets #delete no longer needed variables
 

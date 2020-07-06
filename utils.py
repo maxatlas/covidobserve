@@ -6,8 +6,9 @@ import json
 from os import listdir, path as p
 from pprint import pprint
 
-def is_person(token):
-	return token.startswith("@")
+def is_person(e):
+	qualified_types = ["PERSON", "FAC"]
+	return e.type in qualified_types 
 
 def get_name(e):
 	'''
@@ -18,15 +19,12 @@ def get_name(e):
 	'''
 	
 	if is_person(e):
-		e = e[1:]
-
-		if e:
-			out = re.findall("[A-Z][a-z]+", e)# *: Scott Morrison P M; +: Scott Morrison
-			out = out if out else [e]
-		else: out = []
+		out = re.findall("[A-Z][a-z]+", e.text)# *: Scott Morrison P M; +: Scott Morrison
+		out = " ".join(out) if out else e.text
+		print(e.text, out)
 
 		return out
-	return [e]
+	return e.text
 
 def ner_sent(sent, report=False):
 	if report: print("Start sending NER...")

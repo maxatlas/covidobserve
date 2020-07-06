@@ -9,7 +9,7 @@ import re
 from pprint import pprint
 from utils import get_name
 
-delim = " \n----*****----\n "
+delim = "\n----*****----\n"
 
 replacement = {
 	"AU" : "Australia",
@@ -35,9 +35,8 @@ def replace_all(NERs, replacement_dict):
 		return token
 
 	for NER in NERs:
-		NER_text = NER.text
-		for token in replace_name(NER_text): yield {
-			"text":replace_by_dict(token),
+		yield {
+			"text":replace_by_dict(replace_name(NER)),
 			"start_char": NER.start_char,
 			"end_char": NER.end_char,
 			"type":NER.type
@@ -78,6 +77,9 @@ def NER2texts(e, texts):
 
 if __name__ == '__main__':
 	sample_texts = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
+	# text = delim.join(sample_texts)
+	# text = "@GladysB Stable door closed by @ScottMorrisonMP. \nHorse has bolted. \nAustralia has to contend with community transmission and recession due to fatal dithering and delay. \nhttps://t.co/maHJlRSTgy \n#covid19australia #coronavirus"
+	# out = get_NERs(text)
 	l = texts2NER(sample_texts)
-	e = l[9][1]
-	out = NER2texts(e, sample_texts)
+	pprint(l)
+	# out = NER2texts(e, sample_texts)
