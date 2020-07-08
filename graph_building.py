@@ -18,13 +18,28 @@ import json
 import pandas as pd
 import numpy as np
 
+from os import listdir, path as p
 from pprint import pprint
-
+from collections import defaultdict
+from preprocessing import texts2NER, NER2texts
 
 def get_NER_text(docs):
 	def get_text(doc):
 		for e in doc: yield e.get("text")
 	return [list(get_text(doc)) for doc in docs]
+
+def get_NER_indexes(docs):
+	'''
+	docs: [[NER]]
+	
+	output: {NER entity text: [index]}
+	index - full_text index corresponds to the full_text
+
+	'''
+	out = defaultdict(list)
+	for i, NERs in enumerate(docs):
+		for NER in NERs: out[NER].append(i)
+	return out
 
 def get_e_sig(doc):
 	'''
@@ -70,7 +85,7 @@ def get_edge_weights_all_docs(docs):
 		out = out.add(get_edge_weights_per_doc(tf), fill_value=0)
 	return out
 
-def get_knowledge_graph(texts, e_only=False, edge_only=False):
+def get_knowledge_graph(texts, e_only=False, edge_only=False, save_NER=None):
 	'''
 		Get knowledge graph.
 		
@@ -78,31 +93,44 @@ def get_knowledge_graph(texts, e_only=False, edge_only=False):
 
 		mean(entity size) over all docs.
 		edge weight over all docs.
-
+	
+		save_NER: file path+name
 		TESTED.
 	'''
 	NERs = texts2NER(texts)
+	if save_NER: json.dump(NERs, open(save_NER, "w"))
+	
 	docs = get_NER_text(NERs)
 
 	if e_only: return get_e_sig_mean(docs)
 	elif edge_only: return get_edge_weights_all_docs(docs)
 
 	else: return {
-				"e_sigs_mean": get_e_sig_mean(docs),
-				"edge_weights": get_edge_weights_all_docs(docs)
+				"e_sigs_mean": get_e_sig_mean(docs).to_dict(),
+				"edge_weights": get_edge_weights_all_docs(docs).to_dict(),
+				"word_index_dict": get_NER_indexes(docs)
 			}
+
+def main(from_directory, to_directory, NER_directory=None):
+	'''
+		get_knowledge_graph for all files under directory.
+	
+	'''
+	for file in listdir(from_directory):
+		save_NER = p.join(NER_directory, file) if NER_directory else None
+
+		texts = json.load(open(p.join(from_directory, file)))
+		print("Texts loaded for %s" %file)
+
+		graph = get_knowledge_graph(texts, save_NER=save_NER)
+		print("Graph painted.")
+		
+		json.dump(graph, open(p.join(to_directory, file), "w"))
+		print("Done for %s." %file)
 
 
 if __name__ == '__main__':
-	from preprocessing import texts2NER
-	sample_texts = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
-	# out = get_edge_weights_all_docs(l)
-	# out = get_e_sig_mean(l)
-	out = get_knowledge_graph(sample_texts)
-	pprint(out)
-	# for NERs in l:
-	# 	tf=get_e_sig(NERs)
-	# 	ew = get_edge_weights_per_doc(tf)
+	main("4.Get Tweets", "6.Graphs")
 
-	# 	pprint(ew)
-	
+	# sample_text = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
+	# get_knowledge_graph(sample_text, save_NER="samples/NER.json")
