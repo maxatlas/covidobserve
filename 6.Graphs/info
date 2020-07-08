@@ -1,1 +1,5 @@
-
+{
+  "e_sigs_mean":{NER text: entity significance},
+  "edge_weights": {'[NER1, NER2]':weights},
+  "word_index_dict":{NER text: [index]}
+}
