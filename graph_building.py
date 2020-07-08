@@ -128,6 +128,8 @@ def main(from_directory, to_directory, NER_directory=None):
 		json.dump(graph, open(p.join(to_directory, file), "w"))
 		print("Done for %s." %file)
 
+		del graph #space management
+
 
 if __name__ == '__main__':
 	main("4.Get Tweets", "6.Graphs")
