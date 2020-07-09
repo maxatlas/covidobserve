@@ -1,5 +1,21 @@
-python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-03-30.json"
-python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-13.json"
+
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-03-28.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-03-29.json"
+
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-03-31.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-01.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-02.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-03.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-04.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-05.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-06.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-07.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-08.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-09.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-10.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-11.json"
+python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-12.json"
+
 python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-14.json"
 python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-15.json"
 python preprocess_pipe.py "1.Get Tweet Ids" "en_geo_2020-04-16.json"
