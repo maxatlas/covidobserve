@@ -1,10 +1,7 @@
 import json
 from pprint import pprint
 
-
-def filter_entity():
-
-	return {
+filter_entity_dict={
 	"delim": "\n----*****----\n",
 	"replacement": {
 		"AU" : "Australia",
@@ -14,6 +11,20 @@ def filter_entity():
 	"exclude_types": ["EST TIME", "DATE", "CARDINAL", "LAW", "ORDINAL", "TIME", "PERCENT", "QUANTITY", "MONEY"],
 	"include_types": ["PERSON", "ORG", "GPE", "FAC"]
 	}
+
+folder_names={
+	1:"1.Get Tweet Ids",
+	2:"2.Filter by Location",
+	3:"4.Get Tweets",
+	4:"5.Get NER Entities",
+	5:"6.Graphs"
+}
+
+def get_folder_names():
+	return folder_names
+
+def filter_entity():
+	return filter_entity_dict
 
 def filter_by_loc(tweet_meta, au_only=False, depth=0, depth_gt=0, depth_lt=0):
 	

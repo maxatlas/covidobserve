@@ -54,7 +54,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 	i2add=0 #alter start_char, end_char by this much
 
 	while i<len(texts): 
-		print("Round %i"%i)
+		print("\tRound %i"%i)
 		text = delim.join(texts[i:tweets_per_round*page_number])
 
 		start=time.time()
@@ -98,11 +98,11 @@ def NER2texts(e, texts):
 	return texts[i]
 
 if __name__ == '__main__':
-	sample_texts = json.load(open("4.Get Tweets/2020-03-30.json"))[:100]
+	sample_texts = json.load(open("4.Get Tweets/2020-03-30.json"))
 	sample_texts = [item[1] for item in sample_texts]
 	# text = delim.join(sample_texts)
 	# text = "@GladysB Stable door closed by @ScottMorrisonMP. \nHorse has bolted. \nAustralia has to contend with community transmission and recession due to fatal dithering and delay. \nhttps://t.co/maHJlRSTgy \n#covid19australia #coronavirus"
 	# out = get_NERs(text)
-	l = texts2NER(sample_texts, include=True, tweets_per_round=50)
+	l = texts2NER(sample_texts, include=True, tweets_per_round=50000)
 	pprint(l)
 	# out = NER2texts(e, sample_texts)
