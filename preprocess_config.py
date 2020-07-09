@@ -1,6 +1,20 @@
 import json
 from pprint import pprint
 
+
+def filter_entity():
+
+	return {
+	"delim": "\n----*****----\n",
+	"replacement": {
+		"AU" : "Australia",
+		"NZ" : "New Zealand"
+	},
+
+	"exclude_types": ["EST TIME", "DATE", "CARDINAL", "LAW", "ORDINAL", "TIME", "PERCENT", "QUANTITY", "MONEY"],
+	"include_types": ["PERSON", "ORG", "GPE", "FAC"]
+	}
+
 def filter_by_loc(tweet_meta, au_only=False, depth=0, depth_gt=0, depth_lt=0):
 	
 	assert not(depth and depth_gt and depth_lt==1) , "depth_lt needs to be 2 at least."
@@ -18,6 +32,7 @@ def filter_by_loc(tweet_meta, au_only=False, depth=0, depth_gt=0, depth_lt=0):
 def filter_en(tweet):
 	'''
 		If the tweet is in English. Return full_text attribute if it's not a RT, or, return the retweeted content.
+		return ID, full_text
 	'''
 	if tweet['lang']=='en': 
 		if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
@@ -26,6 +41,17 @@ def filter_en(tweet):
 				out = (tweet['id'], tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"])
 			except Exception: out = (tweet['id'], tweet['full_text'])
 	else: out = (None, None)
+	return out
+
+def get_full_text(tweet):
+	'''
+		Return ID, full_text
+	'''
+	if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
+	else:
+		try:
+			out = (tweet['id'], tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"])
+		except Exception: out = (tweet['id'], tweet['full_text'])
 	return out
 
 def filter_by_city(tweet_meta, filter_keys):

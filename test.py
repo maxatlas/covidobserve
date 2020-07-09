@@ -5,6 +5,7 @@ from preprocess_config import filter_by_au, filter_by_city, filter_by_loc, filte
 from collections import defaultdict
 import time, json
 
+def 
 def get_tags(sentence):
 	tags = pos_tag(TweetTokenizer().tokenize(sentence))
 	tags = st.tag([tag[0] for tag in tags])

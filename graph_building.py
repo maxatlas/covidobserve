@@ -1,4 +1,3 @@
-
 '''
 	Pipeline phase 2.
 	- calculate entity significance per doc.
@@ -24,16 +23,23 @@ from collections import defaultdict
 from preprocessing import texts2NER, NER2texts
 
 def get_NER_text(docs):
+	'''
+		docs:[[e]]
+		return [[e.text]]
+		TESTED.
+
+	'''
 	def get_text(doc):
 		for e in doc: yield e.get("text")
 	return [list(get_text(doc)) for doc in docs]
 
 def get_NER_indexes(docs):
 	'''
-	docs: [[NER]]
-	
-	output: {NER entity text: [index]}
-	index - full_text index corresponds to the full_text
+		docs: [[NER]]
+		
+		output: {NER entity text: [index]}
+		index - full_text index corresponds to the full_text
+		TESTED.
 
 	'''
 	out = defaultdict(list)
@@ -45,14 +51,15 @@ def get_e_sig(doc):
 	'''
 		doc: [NER entity].
 		return pd.Series of {token: normalized}.
-		TESTED
+		TESTED.
+
 	'''
 	return pd.Series(doc).value_counts(normalize=True)
 
 def get_e_sig_mean(docs):
 	'''
-		TESTED
-		rolling mean?
+		TESTED.
+
 	'''
 	n = len(docs)
 	out = pd.Series([],dtype="float64")
@@ -64,7 +71,8 @@ def get_edge_weights_per_doc(tf):
 	'''
 		tf: output of get_e_sig
 		key: string of 2 keys
-		TESTED
+		TESTED.
+
 	'''
 	out = pd.Series([], dtype="float64")
 	for i, key0 in enumerate(tf.index):
@@ -77,7 +85,8 @@ def get_edge_weights_all_docs(docs):
 	'''
 		docs: [doc]
 		doc: [NER entities].
-		TESTED
+		TESTED.
+
 	'''
 	out = pd.Series([], dtype="float64")
 	for doc in docs: 
@@ -85,22 +94,25 @@ def get_edge_weights_all_docs(docs):
 		out = out.add(get_edge_weights_per_doc(tf), fill_value=0)
 	return out
 
-def get_knowledge_graph(texts, e_only=False, edge_only=False, save_NER=None):
+def get_knowledge_graph(texts=None, docs=None, e_only=False, edge_only=False, save_NER=None):
 	'''
 		Get knowledge graph.
 		
 		texts: [full_text]
+		docs: [[NER]]
 
 		mean(entity size) over all docs.
 		edge weight over all docs.
 	
 		save_NER: file path+name
 		TESTED.
+
 	'''
-	NERs = texts2NER(texts)
-	if save_NER: json.dump(NERs, open(save_NER, "w"))
-	
-	docs = get_NER_text(NERs)
+	if texts and not docs:
+		NERs = texts2NER(texts)
+		if save_NER: json.dump(NERs, open(save_NER, "w"))
+		
+		docs = get_NER_text(NERs)
 
 	if e_only: return get_e_sig_mean(docs)
 	elif edge_only: return get_edge_weights_all_docs(docs)
@@ -116,23 +128,27 @@ def main(from_directory, to_directory, NER_directory=None):
 		get_knowledge_graph for all files under directory.
 	
 	'''
-	for file in listdir(from_directory):
-		save_NER = p.join(NER_directory, file) if NER_directory else None
+	bti = len(listdir(to_directory))
+	for i, file in enumerate(listdir(from_directory)):
+		print(i, file)
+		if i> bti or i==bti:
+			save_NER = p.join(NER_directory, file) if NER_directory else None
 
-		texts = json.load(open(p.join(from_directory, file)))
-		print("Texts loaded for %s" %file)
+			texts = json.load(open(p.join(from_directory, file)))
+			print("Texts loaded for %s" %file)
 
-		graph = get_knowledge_graph(texts, save_NER=save_NER)
-		print("Graph painted.")
-		
-		json.dump(graph, open(p.join(to_directory, file), "w"))
-		print("Done for %s." %file)
+			graph = get_knowledge_graph(texts=texts, save_NER=save_NER)
+			print("Graph painted.")
+			
+			json.dump(graph, open(p.join(to_directory, file), "w"))
+			print("Done for %s." %file)
 
-		del graph #space management
+			del graph #space management
 
 
 if __name__ == '__main__':
-	main("4.Get Tweets", "6.Graphs")
+	main("4.Get Tweets", "6.Graphs", NER_directory="5.Get NER Entities")
 
-	# sample_text = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
+	sample_text = json.load(open("4.Get Tweets/2020-03-30.json"))[:50]
+
 	# get_knowledge_graph(sample_text, save_NER="samples/NER.json")

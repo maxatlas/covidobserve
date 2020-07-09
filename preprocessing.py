@@ -3,18 +3,17 @@
 
 '''
 import stanza
+import time
 import json
 import re
 
 from pprint import pprint
 from utils import get_name
+from preprocess_config import filter_entity
 
-delim = "\n----*****----\n"
+filter_entity_dict=filter_entity()
 
-replacement = {
-	"AU" : "Australia",
-	"NZ" : "New Zealand"
-}
+delim, replacement, exclude_types, include_types = filter_entity_dict['delim'], filter_entity_dict['replacement'], filter_entity_dict['exclude_types'], filter_entity_dict["include_types"]
 
 def get_NER_list_index(NER_end_index, text):
 	return len(text[:NER_end_index].split(delim))-1
@@ -42,7 +41,7 @@ def replace_all(NERs, replacement_dict):
 			"type":NER.type
 			}
 
-def texts2NER(texts, exclude_type=[]):
+def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_round=500000):
 	'''
 		texts: [text]
 		text: tweet full_text.
@@ -50,17 +49,40 @@ def texts2NER(texts, exclude_type=[]):
 		return [[NER]] index corresponds to [text], hence traceable
 		TESTED
 	'''
-	NER_list = []
 
-	text = delim.join(texts)
-	NERs = get_NERs(text)
-	NERs = list(replace_all(NERs, replacement_dict=replacement))
+	i, page_number, NER_list = 0,1,[]
+	i2add=0 #alter start_char, end_char by this much
 
-	for e in NERs:
-		e_list_i = get_NER_list_index(e.get("end_char"), text)
-		if e.get("type") not in exclude_type:
-			while len(NER_list)<e_list_i+1: NER_list.append([])
-			NER_list[e_list_i].append(e)
+	while i<len(texts): 
+		print("Round %i"%i)
+		text = delim.join(texts[i:tweets_per_round*page_number])
+
+		start=time.time()
+		NERs = get_NERs(text)
+		end=time.time()
+		print("\nOutput length for round %i: %i" %(page_number, len(NERs)))
+		print("\t...takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
+
+		NERs = list(replace_all(NERs, replacement_dict=replacement))
+
+		exclude_types=filter_entity_dict["exclude_types"] if exclude else []
+		include_types=filter_entity_dict["include_types"] if include else []
+
+		for e in NERs:
+			e['end_char'], e['start_char'] = e['end_char']+i2add, e['start_char']+i2add
+			e_list_i = get_NER_list_index(e.get("end_char"), text)
+			
+			if (not include_types and e.get("type") not in exclude_types) or (not exclude_types and e.get("type") in include_types):
+				while len(NER_list)<e_list_i+1: NER_list.append([])
+				NER_list[e_list_i].append(e)
+				if report: print(e['text'], e['type'])
+
+		i2add+=len(text)
+		i+=tweets_per_round
+		page_number+=1
+
+		del NERs
+
 	return NER_list
 
 def get_NERs(text):
@@ -76,10 +98,11 @@ def NER2texts(e, texts):
 	return texts[i]
 
 if __name__ == '__main__':
-	sample_texts = json.load(open("4.Get Tweets/2020-03-28.json"))[:10]
+	sample_texts = json.load(open("4.Get Tweets/2020-03-30.json"))[:100]
+	sample_texts = [item[1] for item in sample_texts]
 	# text = delim.join(sample_texts)
 	# text = "@GladysB Stable door closed by @ScottMorrisonMP. \nHorse has bolted. \nAustralia has to contend with community transmission and recession due to fatal dithering and delay. \nhttps://t.co/maHJlRSTgy \n#covid19australia #coronavirus"
 	# out = get_NERs(text)
-	l = texts2NER(sample_texts)
+	l = texts2NER(sample_texts, include=True, tweets_per_round=50)
 	pprint(l)
 	# out = NER2texts(e, sample_texts)
