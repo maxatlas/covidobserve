@@ -74,7 +74,7 @@ def step4(full_texts, ner_folder, graph_folder, file_name, tweets_per_round):
 
 	return graph
 
-def main(file_name, data=None, start_from=1, tweets_per_round=50000, ner_gpu=True):
+def main(file_name, data=None, start_from=1, tweets_per_round=20000, ner_gpu=True):
 	'''
 		Need to specify data if not start_from 0
 	'''
@@ -85,7 +85,7 @@ def main(file_name, data=None, start_from=1, tweets_per_round=50000, ner_gpu=Tru
 		tweet_ids = step1(file_folder, file_name, loc_folder)
 	
 	file_name = file_name.split("_")[-1]
-	
+
 	if start_from<3:
 		if start_from==2: tweet_ids=data
 		tweets = step2(tweet_ids)
