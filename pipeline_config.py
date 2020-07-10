@@ -15,9 +15,9 @@ filter_entity_dict={
 folder_names={
 	1:"1.Get Tweet Ids",
 	2:"2.Filter by Location",
-	3:"4.Get Tweets",
-	4:"5.Get NER Entities",
-	5:"6.Graphs"
+	3:"3.Get Tweets",
+	4:"4.Get NER Entities",
+	5:"5.Graphs"
 }
 
 def get_folder_names():
@@ -26,10 +26,10 @@ def get_folder_names():
 def filter_entity():
 	return filter_entity_dict
 
-def filter_by_loc(tweet_meta):
+def filter_by_loc(tweet_meta, ratio=0.6, depth=0, depth_gt=0, depth_lt=0):
 	if tweet_meta["tweet_locations"] and not (tweet_meta['user_location'] or tweet_meta['place'] or tweet_meta['geo']):
-		au_locs = [filter_by_loc_depth(loc, depth=1) for loc in tweet_meta["tweet_locations"]]
-		return sum(au_locs)/len(tweet_meta["tweet_locations"])>0.6
+		au_locs = [filter_by_loc_depth(loc, depth=depth, depth_lt=depth_lt, depth_gt=depth_gt) for loc in tweet_meta["tweet_locations"]]
+		return sum(au_locs)/len(tweet_meta["tweet_locations"])>ratio
 
 def filter_by_loc_depth(loc, depth=0, depth_gt=0, depth_lt=0):
 	'''
@@ -50,6 +50,7 @@ def filter_en(tweet):
 	'''
 		If the tweet is in English. Return full_text attribute if it's not a RT, or, return the retweeted content.
 		return ID, full_text
+		
 	'''
 	if tweet['lang']=='en': 
 		if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
@@ -63,6 +64,8 @@ def filter_en(tweet):
 def get_full_text(tweet):
 	'''
 		Return ID, full_text
+		Same as filter_en except not looking at tweet['lang']
+
 	'''
 	if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
 	else:
@@ -99,9 +102,12 @@ def filter_by_au(tweet_meta, filter_keys=["place", "geo", "user_location"], dept
 if __name__ == '__main__':
 	from utils import get_tweet_by_id
 
-	for t in open('1.Get Tweet Ids/en_geo_2020-03-29.json'):
+	by_au, by_loc = [], []
+	for t in open('1.Get Tweet Ids/en_geo_2020-04-13.json'):
 		tweet_meta = json.loads(t)
 		# if filter_by_au(tweet_meta): print("\n"+get_tweet_by_id(tweet_meta['tweet_id']))
-		if filter_by_loc(json.loads(t)): 
-			print(json.loads(t))
-			print(get_tweet_by_id(tweet_meta['tweet_id'])+"\n")
+		if filter_by_au(tweet_meta): by_au.append(True)
+		if filter_by_loc(tweet_meta): by_loc.append(True)
+	
+	print("by au: %i" %sum(by_au))
+	print("by loc: %i" %sum(by_loc))

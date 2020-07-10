@@ -46,7 +46,6 @@ def step2(tweet_ids):
 	return tweets
 
 def step3(tweets, text_folder, file_name):
-
 	#Step 3. Filter by English
 	print("Start filter by English and get full_text.")
 	full_texts = []
@@ -64,7 +63,7 @@ def step4(full_texts, ner_folder, file_name, tweets_per_round):
 	full_texts = [text for _,text in full_texts] #remove tweet_id
 
 	start = time.time()
-	NERs = texts2NER(texts=full_texts, tweets_per_round=tweets_per_round)
+	NERs = texts2NER(texts=full_texts, tweets_per_round=tweets_per_round, include=True)
 	end = time.time()
 
 
@@ -130,8 +129,8 @@ def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000, 
 if __name__ == '__main__':
 	from sys import argv
 	if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")
-	main(argv[1])
+	# main(argv[1])
 
-	# data = json.load(open(p.join(argv[1], argv[2])))
+	data = json.load(open(p.join(argv[1], argv[2])))
 	
-	# main(argv[2], data, start_from=4, end_at=4)
+	main(argv[2], data, start_from=4)
