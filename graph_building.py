@@ -43,11 +43,11 @@ def get_NER_indexes(docs):
 		TESTED.
 
 	'''
-	print("Start getting NER indexes...")
+	print("\tStart getting NER indexes...")
 	out = defaultdict(list)
 	for i, NERs in enumerate(docs):
 		for NER in NERs: out[NER].append(i)
-	print("Done.")
+	print("\tDone.")
 	return out
 
 def get_e_sig(doc):
@@ -64,11 +64,11 @@ def get_e_sigs_mean(docs):
 		TESTED.
 
 	'''
-	print("Start getting sigs mean...")
+	print("\tStart getting sigs mean...")
 	n = len(docs)
 	out = pd.Series([],dtype="float64")
 	for doc in docs: out = out.add(get_e_sig(doc), fill_value=0)
-	print("Done.")
+	print("\tDone.")
 	return out/n
 
 def get_edge_weights_per_doc(tf):
@@ -92,14 +92,13 @@ def get_edge_weights_all_docs(docs):
 		TESTED.
 
 	'''
-	print("Start getting edge weights...")
+	print("\tStart getting edge weights...")
 	out = pd.Series([], dtype="float64")
 	for i, doc in enumerate(docs):
-		print(i)
+		if i%1000==0: print("\t\tat:",i)
 		tf = get_e_sig(doc)
 		out = out.add(get_edge_weights_per_doc(tf), fill_value=0)
-		if i%1000==0: print(i)
-	print("Done.")
+	print("\tDone.")
 	return out
 
 def get_knowledge_graph(texts=None, NERs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
