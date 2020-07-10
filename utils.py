@@ -6,6 +6,23 @@ import json
 from os import listdir, path as p
 from pprint import pprint
 
+def get_tweet_by_id(tweet_id):
+	from os import environ as e
+	from twarc import Twarc
+
+	out = ""
+	twarc = Twarc(e["TWITTER_API_KEY"], e["TWITTER_API_SECRET_KEY"], e["TWITTER_ACCESS_TOKEN"], e["TWITTER_ACCESS_TOKEN_SECRET"])
+	tweet = list(twarc.hydrate([tweet_id]))
+	if tweet:
+		tweet=tweet[0]
+		if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
+		else:
+			try:
+				out = (tweet['id'], tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"])
+			except Exception: out = (tweet['id'], tweet['full_text'])
+
+	return out
+
 def is_person(e):
 	qualified_types = ["PERSON", "FAC"]
 	return e.type in qualified_types 
@@ -17,11 +34,9 @@ def get_name(e):
 		realDonaldTrump -> Donald Trump
 		realdonaldtrump -> realdonaldtrump
 	'''
-	
 	if is_person(e):
 		out = re.findall("[A-Z][a-z]+", e.text)# *: Scott Morrison P M; +: Scott Morrison
 		out = " ".join(out) if out else e.text
-		print(e.text, out)
 
 		return out
 	return e.text
@@ -86,4 +101,6 @@ def get_loc(tweet_id, loc_list):
 
 
 if __name__ == '__main__':
-	combine_files("5.Get NER Entities", "2020-04-10")
+	# combine_files("5.Get NER Entities", "2020-04-10")
+	from sys import argv
+	print(get_tweet_by_id(argv[1]))

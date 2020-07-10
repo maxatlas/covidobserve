@@ -26,7 +26,12 @@ def get_folder_names():
 def filter_entity():
 	return filter_entity_dict
 
-def filter_by_loc(tweet_meta, depth=0, depth_gt=0, depth_lt=0):
+def filter_by_loc(tweet_meta):
+	if tweet_meta["tweet_locations"] and not (tweet_meta['user_location'] or tweet_meta['place'] or tweet_meta['geo']):
+		au_locs = [loc['country_code'] == "au" for loc in tweet_meta["tweet_locations"]]
+		return sum(au_locs)/len(tweet_meta["tweet_locations"])>0.6
+
+def filter_by_loc_depth(tweet_meta, depth=0, depth_gt=0, depth_lt=0):
 	
 	assert not(depth and depth_gt and depth_lt==1) , "depth_lt needs to be 2 at least."
 
@@ -70,7 +75,7 @@ def filter_by_city(tweet_meta, filter_keys):
 		if filter_key in tweet_meta.keys() and tweet_meta[filter_key] and tweet_meta[filter_key]['country_code']=='au':
 			if 'city' in tweet_meta[filter_key].keys(): return tweet_meta[filter_key]['city']
 
-def filter_by_au(tweet_meta, filter_keys, depth=0, depth_gt=0, depth_lt=0):
+def filter_by_au(tweet_meta, filter_keys=["place", "geo", "user_location"], depth=0, depth_gt=0, depth_lt=0):
 	assert not (depth and depth_gt and depth_lt==1), "depth_lt must be 2 at least."
 
 	'''
@@ -91,5 +96,10 @@ def filter_by_au(tweet_meta, filter_keys, depth=0, depth_gt=0, depth_lt=0):
 				if depth_lt: return len(tweet_meta[filter_key])<depth_lt
 
 if __name__ == '__main__':
-	for t in open('samples/cat2_tweet_sample_2020-03-28.json'):
-		print(filter_en(json.loads(t)))
+	from utils import get_tweet_by_id
+	for t in open('1.Get Tweet Ids/en_geo_2020-03-29.json'):
+		tweet_meta = json.loads(t)
+		# if filter_by_au(tweet_meta): print("\n"+get_tweet_by_id(tweet_meta['tweet_id']))
+		if filter_by_loc(json.loads(t)): 
+			print(json.loads(t))
+			print(get_tweet_by_id(tweet_meta['tweet_id'])+"\n")
