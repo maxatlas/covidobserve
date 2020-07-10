@@ -73,7 +73,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 			e['end_char'], e['start_char'] = e['end_char']+i2add, e['start_char']+i2add
 			e_list_i = get_NER_list_index(e.get("end_char"), texts_str)
 			
-			if (not include_types and e.get("type") not in exclude_types) or (not exclude_types and e.get("type") in include_types):
+			if (not include_types and e.get("type") not in exclude_types) or (not exclude_types and e.get("type") in include_types) and e.get("text").lower()!="australia":
 				while len(NER_list)<e_list_i+1: NER_list.append([])
 				NER_list[e_list_i].append(e)
 				if report: print(e['text'], e['type'])

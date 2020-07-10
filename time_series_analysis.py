@@ -24,11 +24,17 @@ def divide2blocks(e_sigs):
 		Space and time optimization needed?
 	'''
 	
-	last = pd.DataFrame(data=[])
-	rolling_means = None #How to do this in an efficient way?
-
-	return df
+	out = pd.DataFrame(data=[]).rename_axis("NERs")
+	for e_sig in e_sigs: 
+		e_sig = pd.Series(e_sig).to_frame().rename_axis("NERs")
+		out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
+	
+	return out
 
 if __name__ == '__main__':
-	out = divide2blocks("4.Get Tweets", test=True)
+	folder = "5.Graphs"
+	graphs = [json.load(open(p.join(folder, file)))["e_sigs_mean"] for file in listdir(folder)]
+	graphs= graphs[:5]
+
+	out = divide2blocks(graphs)
 	pprint(out)
