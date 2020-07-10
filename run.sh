@@ -1,5 +1,3 @@
-
-
 python pipeline.py "en_geo_2020-03-28.json"
 python pipeline.py "en_geo_2020-03-29.json"
 python pipeline.py "en_geo_2020-03-30.json"

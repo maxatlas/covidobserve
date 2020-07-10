@@ -23,7 +23,7 @@ def step1(file_folder, file_name, loc_folder):
 	for i, tweet_meta in enumerate(open(p.join(file_folder, file_name))):
 		if i%100000==0: print("\tat %i"%i) #count
 		tweet_meta = json.loads(tweet_meta)
-		if filter_by_au(tweet_meta, ["place", "coordinates", "user_location"]) and filter_by_loc(tweet_meta): tweet_ids.append(tweet_meta["tweet_id"]) #if satisfy the filtering condition, append tweet_id
+		if filter_by_au(tweet_meta, filter_keys=["place", "geo", "user_location"]) or filter_by_loc(tweet_meta): tweet_ids.append(tweet_meta["tweet_id"]) #if satisfy the filtering condition, append tweet_id
 	
 	file_name = file_name.split("_")[-1]
 	loc_file = "%s/%s" %(loc_folder, file_name)

@@ -28,22 +28,23 @@ def filter_entity():
 
 def filter_by_loc(tweet_meta):
 	if tweet_meta["tweet_locations"] and not (tweet_meta['user_location'] or tweet_meta['place'] or tweet_meta['geo']):
-		au_locs = [loc['country_code'] == "au" for loc in tweet_meta["tweet_locations"]]
+		au_locs = [filter_by_loc_depth(loc, depth=1) for loc in tweet_meta["tweet_locations"]]
 		return sum(au_locs)/len(tweet_meta["tweet_locations"])>0.6
 
-def filter_by_loc_depth(tweet_meta, depth=0, depth_gt=0, depth_lt=0):
-	
-	assert not(depth and depth_gt and depth_lt==1) , "depth_lt needs to be 2 at least."
+def filter_by_loc_depth(loc, depth=0, depth_gt=0, depth_lt=0):
+	'''
+		tweet_locations: [loc]
+		loc: {"country_code": ..., "city":...}
 
 	'''
-		A dictionary
-	'''
-	for place in tweet_meta["tweet_locations"]:
-		if not (depth and depth_lt and depth_gt): return place["country_code"]=="au"
-		elif place['country_code'] == "au": 
-			if depth: return len(place)==depth
-			if depth_gt: return len(place)>depth_gt
-			if depth_lt: return len(place)<depth_lt
+	assert not(depth and depth_gt and depth_lt==1) , "depth_lt needs to be 2 at least."
+
+	if not (depth or depth_lt or depth_gt): return loc["country_code"]=="au"
+	elif loc['country_code'] == "au": 
+		if depth: return len(loc)==depth
+		if depth_gt: return len(loc)>depth_gt
+		if depth_lt: return len(loc)<depth_lt
+	return False
 
 def filter_en(tweet):
 	'''
@@ -97,6 +98,7 @@ def filter_by_au(tweet_meta, filter_keys=["place", "geo", "user_location"], dept
 
 if __name__ == '__main__':
 	from utils import get_tweet_by_id
+
 	for t in open('1.Get Tweet Ids/en_geo_2020-03-29.json'):
 		tweet_meta = json.loads(t)
 		# if filter_by_au(tweet_meta): print("\n"+get_tweet_by_id(tweet_meta['tweet_id']))
