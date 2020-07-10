@@ -17,6 +17,7 @@ import json
 import pandas as pd
 import numpy as np
 
+from pprint import pprint
 from os import listdir, path as p
 from pprint import pprint
 from collections import defaultdict
@@ -42,9 +43,11 @@ def get_NER_indexes(docs):
 		TESTED.
 
 	'''
+	print("Start getting NER indexes...")
 	out = defaultdict(list)
 	for i, NERs in enumerate(docs):
 		for NER in NERs: out[NER].append(i)
+	print("Done.")
 	return out
 
 def get_e_sig(doc):
@@ -54,17 +57,18 @@ def get_e_sig(doc):
 		TESTED.
 
 	'''
-	return pd.Series(doc).value_counts(normalize=True)
+	return pd.Series(doc, dtype="object").value_counts(normalize=True)
 
-def get_e_sig_mean(docs):
+def get_e_sigs_mean(docs):
 	'''
 		TESTED.
 
 	'''
+	print("Start getting sigs mean...")
 	n = len(docs)
 	out = pd.Series([],dtype="float64")
 	for doc in docs: out = out.add(get_e_sig(doc), fill_value=0)
-
+	print("Done.")
 	return out/n
 
 def get_edge_weights_per_doc(tf):
@@ -88,18 +92,23 @@ def get_edge_weights_all_docs(docs):
 		TESTED.
 
 	'''
+	print("Start getting edge weights...")
 	out = pd.Series([], dtype="float64")
-	for doc in docs: 
+	for i, doc in enumerate(docs):
+		print(i)
 		tf = get_e_sig(doc)
 		out = out.add(get_edge_weights_per_doc(tf), fill_value=0)
+		if i%1000==0: print(i)
+	print("Done.")
 	return out
 
-def get_knowledge_graph(texts=None, docs=None, e_only=False, edge_only=False, save_NER=None):
+def get_knowledge_graph(texts=None, NERs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
 	'''
 		Get knowledge graph.
 		
 		texts: [full_text]
 		docs: [[NER]]
+		save_NER: file/filename
 
 		mean(entity size) over all docs.
 		edge weight over all docs.
@@ -108,17 +117,17 @@ def get_knowledge_graph(texts=None, docs=None, e_only=False, edge_only=False, sa
 		TESTED.
 
 	'''
-	if texts and not docs:
-		NERs = texts2NER(texts)
+	if texts and not NERs:
+		NERs = texts2NER(texts, tweets_per_round=tweets_per_round, include=True)
 		if save_NER: json.dump(NERs, open(save_NER, "w"))
 		
-		docs = get_NER_text(NERs)
+	if NERs or texts: docs = get_NER_text(NERs)
 
 	if e_only: return get_e_sig_mean(docs)
 	elif edge_only: return get_edge_weights_all_docs(docs)
 
 	else: return {
-				"e_sigs_mean": get_e_sig_mean(docs).to_dict(),
+				"e_sigs_mean": get_e_sigs_mean(docs).to_dict(),
 				"edge_weights": get_edge_weights_all_docs(docs).to_dict(),
 				"word_index_dict": get_NER_indexes(docs)
 			}
@@ -147,8 +156,9 @@ def main(from_directory, to_directory, NER_directory=None):
 
 
 if __name__ == '__main__':
-	main("4.Get Tweets", "6.Graphs", NER_directory="5.Get NER Entities")
+	# main("4.Get Tweets", "6.Graphs", NER_directory="5.Get NER Entities")
 
-	sample_text = json.load(open("4.Get Tweets/2020-03-30.json"))[:50]
+	NERs = json.load(open("5.Get NER Entities/2020-03-28.json"))
 
-	# get_knowledge_graph(sample_text, save_NER="samples/NER.json")
+	out = get_knowledge_graph(NERs=NERs)
+	json.dump(out, open("6.Graphs/2020-03-28.json", "w"))

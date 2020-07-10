@@ -9,7 +9,7 @@ import re
 
 from pprint import pprint
 from utils import get_name
-from preprocess_config import filter_entity
+from pipeline_config import filter_entity
 
 filter_entity_dict=filter_entity()
 
@@ -50,11 +50,11 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 		TESTED
 	'''
 
-	i, page_number, NER_list = 0,1,[]
-	i2add=0 #alter start_char, end_char by this much
+	i, page_number, NER_list, i2add = 0,1,[], 0 #i2add: alter start_char, end_char by this much
+	texts_str = delim.join(texts)
 
 	while i<len(texts): 
-		print("\tRound %i"%i)
+		print("\tRound %i"%page_number)
 		text = delim.join(texts[i:tweets_per_round*page_number])
 
 		start=time.time()
@@ -63,6 +63,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 		print("\nOutput length for round %i: %i" %(page_number, len(NERs)))
 		print("\t...takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
 
+		print("Start post processing...incl type filtering, start_char & end_char altering, to_dict...")
 		NERs = list(replace_all(NERs, replacement_dict=replacement))
 
 		exclude_types=filter_entity_dict["exclude_types"] if exclude else []
@@ -70,7 +71,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 
 		for e in NERs:
 			e['end_char'], e['start_char'] = e['end_char']+i2add, e['start_char']+i2add
-			e_list_i = get_NER_list_index(e.get("end_char"), text)
+			e_list_i = get_NER_list_index(e.get("end_char"), texts_str)
 			
 			if (not include_types and e.get("type") not in exclude_types) or (not exclude_types and e.get("type") in include_types):
 				while len(NER_list)<e_list_i+1: NER_list.append([])
@@ -82,6 +83,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 		page_number+=1
 
 		del NERs
+		print("Done.")
 
 	return NER_list
 

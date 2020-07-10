@@ -11,8 +11,9 @@ import stanza
 from twarc import Twarc
 from os import listdir, path as p
 from os import environ as e
-from preprocess_config import filter_by_loc, filter_en, filter_by_au, get_folder_names
+from pipeline_config import filter_by_loc, filter_en, filter_by_au, get_folder_names
 from graph_building import get_knowledge_graph
+from preprocessing import texts2NER
 
 def step1(file_folder, file_name, loc_folder):
 	#Step 1. Filter by Location
@@ -22,7 +23,7 @@ def step1(file_folder, file_name, loc_folder):
 	for i, tweet_meta in enumerate(open(p.join(file_folder, file_name))):
 		if i%100000==0: print("\tat %i"%i) #count
 		tweet_meta = json.loads(tweet_meta)
-		if filter_by_loc(tweet_meta) or filter_by_au(tweet_meta, ["place", "coordinates"]): tweet_ids.append(tweet_meta["tweet_id"]) #if satisfy the filtering condition, append tweet_id
+		if filter_by_loc(tweet_meta, depth_lt=3) or filter_by_au(tweet_meta, ["place", "coordinates"]): tweet_ids.append(tweet_meta["tweet_id"]) #if satisfy the filtering condition, append tweet_id
 	
 	file_name = file_name.split("_")[-1]
 	loc_file = "%s/%s" %(loc_folder, file_name)
@@ -57,59 +58,80 @@ def step3(tweets, text_folder, file_name):
 
 	return full_texts
 
-def step4(full_texts, ner_folder, graph_folder, file_name, tweets_per_round):
-	#Step 4. NER tagging and Get Graphs
-	print("Start NER tagging and get Graphs.")
+def step4(full_texts, ner_folder, file_name, tweets_per_round):
+	#Step 4. NER tagging
+	print("Start NER tagging...")
 	full_texts = [text for _,text in full_texts] #remove tweet_id
 
 	start = time.time()
-	graph = get_knowledge_graph(texts=full_texts, save_NER=p.join(ner_folder, file_name), tweets_per_round=tweets_per_round)
+	NERs = texts2NER(texts=full_texts, save_NER=p.join(ner_folder, file_name), tweets_per_round=tweets_per_round)
 	end = time.time()
 
 
-	print("Step4 - Graph generation takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
+	print("Step4 - NER tagging takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
+
+	json.dump(NERs, open(p.join(ner_folder, file_name), "w"))
+	print("NERs saved at %s." %(ner_folder))
+
+	return NERs
+
+def step5(NERs, graph_folder, file_name):
+	#Step 5. Get graphs
+	print("Start graph generation...")
+	
+	start = time.time()
+	graph = get_knowledge_graph(NERs=NERs)
+	end=time.time()
+
+	print("Step5 - Graph generation takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
 
 	json.dump(graph, open(p.join(graph_folder, file_name), "w"))
-	print("Graph saved at %s." %(graph_folder))
+	print("NERs saved at %s." %(graph_folder))
 
 	return graph
 
-def main(file_name, data=None, start_from=1, tweets_per_round=20000, ner_gpu=True):
+
+def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000, ner_gpu=True):
 	'''
-		Need to specify data if not start_from 0
+		Need to specify data if not start_from = 1
 	'''
+	assert end_at > start_from, "end_at (%i) needs to be bigger than start_from (%i)" %(end_at, start_from)
+	
 	#init objects
 	file_folder, loc_folder, text_folder, ner_folder, graph_folder = get_folder_names().values()
 
-	if start_from<2:
+	if start_from<2 and end_at>0:
 		tweet_ids = step1(file_folder, file_name, loc_folder)
 	
 	file_name = file_name.split("_")[-1]
 
-	if start_from<3:
+	if start_from<3 and end_at>1:
 		if start_from==2: tweet_ids=data
 		tweets = step2(tweet_ids)
 		del tweet_ids #delete no longer needed variables
 
-	if start_from<4:
+	if start_from<4 and end_at>2:
 		if start_from==3: tweets = data
 		full_texts = step3(tweets, text_folder, file_name)
 		del tweets #delete no longer needed variables
 	
-	if start_from<5:
+	if start_from<5 and end_at>3:
 		if start_from==4: full_texts = data
-		graph = step4(full_texts, ner_folder, graph_folder, file_name, tweets_per_round)
-		del full_texts, graph
+		NERs = step4(full_texts, ner_folder, file_name, tweets_per_round)
+		del full_texts
 
-	print("Done for %s." %(file_name))
+	if start_from<6 and end_at>4:
+		if start_from==5: NERs = data
+		graph = step5(NERs, graph_folder, file_name)
+		del NERs
 
 	print("\nPipeline compelete for %s" %file_name)
 
 if __name__ == '__main__':
 	from sys import argv
-	if len(argv)<2: print("Please input source folder and file name.")
-	# main(argv[1])
+	if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")
+	main(argv[1])
 
-	data = json.load(open(p.join(argv[1], argv[2])))
+	# data = json.load(open(p.join(argv[1], argv[2])))
 	
-	main(argv[2], data, start_from=4)
+	# main(argv[2], data, start_from=4, end_at=4)

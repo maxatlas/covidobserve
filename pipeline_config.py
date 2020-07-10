@@ -26,7 +26,7 @@ def get_folder_names():
 def filter_entity():
 	return filter_entity_dict
 
-def filter_by_loc(tweet_meta, au_only=False, depth=0, depth_gt=0, depth_lt=0):
+def filter_by_loc(tweet_meta, depth=0, depth_gt=0, depth_lt=0):
 	
 	assert not(depth and depth_gt and depth_lt==1) , "depth_lt needs to be 2 at least."
 
