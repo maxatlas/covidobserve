@@ -1,8 +1,11 @@
 '''
-	Pipeline Phase 1-1
-	Input: CrisisNLP data format path. A list of dictionaries indicating location data.
+	Pipeline steps:
+		Step 1. Filter by Location
+		Step 2. Twarc Hydration
+		Step 3. Filter by English
+		Step 4. NER tagging
+		Step 5. Get graphs
 
-	TODO: split NER list to be less time-consuming. 
 '''
 import json
 import time
@@ -63,7 +66,7 @@ def step4(full_texts, ner_folder, file_name, tweets_per_round):
 	full_texts = [text for _,text in full_texts] #remove tweet_id
 
 	start = time.time()
-	NERs = texts2NER(texts=full_texts, tweets_per_round=tweets_per_round, include=True) #exclude Australia
+	NERs = texts2NER(texts=full_texts, tweets_per_round=tweets_per_round, include=True) #exclude "Australia"
 	end = time.time()
 
 
