@@ -5,7 +5,15 @@ filter_entity_dict={
 	"delim": "\n----*****----\n",
 	"replacement": {
 		"AU" : "Australia",
-		"NZ" : "New Zealand"
+		"Au" : "Australia",
+		"Aus" : "Australia",
+		"NZ" : "New Zealand",
+		"Bo Jo": "Boris Johnson",
+		"BoJo": "Boris Johnson",
+		"Nelbourne": "Melbourne",
+		"#ScottMorrison": "Scott Morrison",
+		"#Australia": "Australia",
+		"coronavirus": "covid19"
 	},
 
 	"exclude_types": ["EST TIME", "DATE", "CARDINAL", "LAW", "ORDINAL", "TIME", "PERCENT", "QUANTITY", "MONEY"],
@@ -49,6 +57,7 @@ def filter_by_loc_depth(loc, depth=0, depth_gt=0, depth_lt=0):
 def filter_en(tweet):
 	'''
 		If the tweet is in English. Return full_text attribute if it's not a RT, or, return the retweeted content.
+		else full_text = retweet text + orginal tweet
 		return ID, full_text
 		
 	'''

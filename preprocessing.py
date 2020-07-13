@@ -19,23 +19,29 @@ def get_NER_list_index(NER_end_index, text):
 	return len(text[:NER_end_index].split(delim))-1
 
 def replace_all(NERs, replacement_dict):
-	def replace_name(token):
+	def replace_name(e):
 		'''
-		example:
+		e->e.text
+
+		example: 
 		
 		realDonaldTrump -> Donald Trump
 		realdonaldtrump -> realdonaldtrump
 		TESTED
 		'''
-		return get_name(token)
+		return get_name(e)
 
 	def replace_by_dict(token):
 		if token in replacement: token = replacement_dict[token]
 		return token
+	
+	def remove_RT(token):
+		out = token[3:] if token.starts_with("RT ") else token
+		return out
 
 	for NER in NERs:
 		yield {
-			"text":replace_by_dict(replace_name(NER)),
+			"text":replace_by_dict(remove_RT(replace_name(NER))),
 			"start_char": NER.start_char,
 			"end_char": NER.end_char,
 			"type":NER.type

@@ -93,9 +93,10 @@ def step5(NERs, graph_folder, file_name):
 	return graph
 
 
-def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000, ner_gpu=True):
+def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 	'''
 		Need to specify data if not start_from = 1
+		
 	'''
 	assert end_at > start_from, "end_at (%i) needs to be bigger than start_from (%i)" %(end_at, start_from)
 	

@@ -19,6 +19,7 @@ from graph_building import get_knowledge_graph
 def get_e_sigs(folder):
 	'''
 		entity significance in pandas.Dataframe format which can be transformed to csv easily.
+		TESTED.
 
 	'''
 	def get_e_sigs(e_sigs, indexes):
@@ -26,6 +27,7 @@ def get_e_sigs(folder):
 			e_sigs: {e_text:significance #(count/sum)}
 			
 			Space and time optimization needed?
+
 		'''
 		assert len(e_sigs)==len(indexes)
 
@@ -35,6 +37,10 @@ def get_e_sigs(folder):
 			e_sig.columns=[name]
 			out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
 		
+		out = out.fillna(0)
+		num = out._get_numeric_data()
+		num[num<0.001]=0
+		
 		return out
 
 	files = sorted(listdir(folder))
@@ -43,16 +49,26 @@ def get_e_sigs(folder):
 	
 	return get_e_sigs(e_sigs, indexes)
 
-def get_peaking_entities(e_sigs):
+def get_peaking_entities(from_folder, Y=1, to_folder="6.Peaking Entities"):
+	'''
+		TESTED.
+
+	'''
+	e_sigs = get_e_sigs(from_folder)
+	if to_folder: e_sigs.to_csv(p.join(to_folder, "e_sigs.csv"))
+
 	e_sigs_rolling_mean = e_sigs.rolling(3).mean()
-	# out.to_csv("e_sigs_rolling_mean.csv")
+	if to_folder: e_sigs_rolling_mean.to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
+
 	e_sigs_rolling_std = e_sigs.rolling(3).std()
-	# e_sigs_rolling_std.to_csv("e_sigs_rolling_std.csv")
+	if to_folder: e_sigs_rolling_std.to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
 	
-	out = e_sigs - e_sigs_rolling_mean > e_sigs_rolling_std
-	# out.to_csv("peaking_entities.csv")
+	out = e_sigs - e_sigs_rolling_mean > Y*e_sigs_rolling_std
+	out = out.replace(False, np.nan)
+	out = out.replace(1.0, True)
+	if to_folder: out.to_csv(p.join(to_folder, "peaking_entities.csv"))
 
 	return out
 
 if __name__ == '__main__':
-	pass
+	get_peaking_entities("5.Graphs")

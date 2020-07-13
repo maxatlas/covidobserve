@@ -36,7 +36,7 @@ def get_NER_text(docs):
 
 def get_NER_indexes(docs):
 	'''
-		docs: [[NER]]
+		docs: [[NER]];
 		
 		output: {NER entity text: [index]}
 		index - full_text index corresponds to the full_text
@@ -157,7 +157,9 @@ def main(from_directory, to_directory, NER_directory=None):
 if __name__ == '__main__':
 	# main("4.Get Tweets", "6.Graphs", NER_directory="5.Get NER Entities")
 
-	NERs = json.load(open("5.Get NER Entities/2020-03-28.json"))
+	# NERs = json.load(open("5.Get NER Entities/2020-03-28.json"))
 
-	out = get_knowledge_graph(NERs=NERs)
-	json.dump(out, open("6.Graphs/2020-03-28.json", "w"))
+	# out = get_knowledge_graph(NERs=NERs)
+	graph = json.load(open("5.Graphs/2020-03-28.json"))
+	out = graph['edge_weights']
+	pprint(out)
