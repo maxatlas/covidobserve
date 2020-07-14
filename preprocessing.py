@@ -18,7 +18,9 @@ delim, replacement, exclude_types, include_types = filter_entity_dict['delim'], 
 def get_NER_list_index(NER_end_index, text):
 	return len(text[:NER_end_index].split(delim))-1
 
-def replace_all(NERs, replacement_dict):
+def replace_all(NERs):
+	replacement_dict = filter_entity_dict['replacement']
+
 	def replace_name(e):
 		'''
 		e > e.text
@@ -32,11 +34,14 @@ def replace_all(NERs, replacement_dict):
 		return get_name(e)
 
 	def replace_by_dict(token):
-		if token in replacement: token = replacement_dict[token]
+		if token in replacement_dict: token = replacement_dict[token]
 		return token
 	
 	def remove_RT(token):
 		out = token[3:] if token.startswith("RT ") else token
+		out = token[:-5] if token.endswith(" &amp") else token
+		out = token[1:] if token.startswith("#") else token
+
 		return out
 
 	for NER in NERs:
@@ -70,7 +75,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 		print("\t...takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
 
 		print("Start post processing...incl type filtering, start_char & end_char altering, to_dict...")
-		NERs = list(replace_all(NERs, replacement_dict=replacement))
+		NERs = list(replace_all(NERs))
 
 		exclude_types=filter_entity_dict["exclude_types"] if exclude else []
 		include_types=filter_entity_dict["include_types"] if include else []

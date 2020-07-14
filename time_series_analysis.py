@@ -15,6 +15,7 @@ from pprint import pprint
 from os import listdir, path as p
 from preprocessing import texts2NER, NER2texts
 from graph_building import get_knowledge_graph
+from pipeline_config import get_folder_names
 
 def get_e_sigs(folder):
 	'''
@@ -49,18 +50,20 @@ def get_e_sigs(folder):
 	
 	return get_e_sigs(e_sigs, indexes)
 
-def get_peaking_entities(from_folder, Y=1, to_folder="6.Peaking Entities"):
+def get_peaking_entities(X=5, Y=1):
 	'''
 		TESTED.
 
 	'''
+	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
+
 	e_sigs = get_e_sigs(from_folder)
 	if to_folder: e_sigs.to_csv(p.join(to_folder, "e_sigs.csv"))
 
-	e_sigs_rolling_mean = e_sigs.rolling(3).mean()
+	e_sigs_rolling_mean = e_sigs.rolling(X).mean()
 	if to_folder: e_sigs_rolling_mean.to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
 
-	e_sigs_rolling_std = e_sigs.rolling(3).std()
+	e_sigs_rolling_std = e_sigs.rolling(X).std()
 	if to_folder: e_sigs_rolling_std.to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
 	
 	out = e_sigs - e_sigs_rolling_mean > Y*e_sigs_rolling_std
@@ -71,4 +74,4 @@ def get_peaking_entities(from_folder, Y=1, to_folder="6.Peaking Entities"):
 	return out
 
 if __name__ == '__main__':
-	get_peaking_entities("5.Graphs")
+	get_peaking_entities()

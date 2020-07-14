@@ -4,16 +4,29 @@ from pprint import pprint
 filter_entity_dict={
 	"delim": "\n----*****----\n",
 	"replacement": {
-		"AU" : "Australia",
-		"Au" : "Australia",
-		"Aus" : "Australia",
-		"NZ" : "New Zealand",
-		"Bo Jo": "Boris Johnson",
-		"BoJo": "Boris Johnson",
-		"Nelbourne": "Melbourne",
-		"#ScottMorrison": "Scott Morrison",
-		"#Australia": "Australia",
-		"coronavirus": "covid19"
+		"AU":"Australia",
+		"Au":"Australia",
+		"Aus":"Australia",
+		"NZ":"New Zealand",
+		"Bo Jo":"Boris Johnson",
+		"BoJo":"Boris Johnson",
+		"ScottMorrison":"Scott Morrison",
+		"scomo":"Scott Morrison",
+		"coronavirus":"Coronavirus",
+		"CORONAVIRUS":"Coronavirus",
+		"Covid":"Coronavirus",
+		"Covid19":"Coronavirus",
+		"Covid-19":"Coronavirus",
+		"Covid 19/Coronavirus":"Coronavirus",
+		"Corona Virus":"Coronavirus",
+		"Coronavirus Australia":"Coronavirus",
+		"COVID19":"Coronavirus",
+		"Covid_19":"Coronavirus",
+		"COVID-19":"Coronavirus",
+		"COVID - 19":"Coronavirus",
+		"@tomhanks":"TomHanks",
+		"tomhanks":"TomHanks"
+
 	},
 
 	"exclude_types": ["EST TIME", "DATE", "CARDINAL", "LAW", "ORDINAL", "TIME", "PERCENT", "QUANTITY", "MONEY"],
@@ -25,7 +38,8 @@ folder_names={
 	2:"2.Filter by Location",
 	3:"3.Get Tweets",
 	4:"4.Get NER Entities",
-	5:"5.Graphs"
+	5:"5.Graphs",
+	6:"6.Peaking Entities"
 }
 
 def get_folder_names():
@@ -43,6 +57,13 @@ def filter_by_loc_depth(loc, depth=0, depth_gt=0, depth_lt=0):
 	'''
 		tweet_locations: [loc]
 		loc: {"country_code": ..., "city":...}
+
+		depth:
+			=1 country
+			=2 country, state
+		depth_gt:
+			=1 must at least contain country
+			=2 must at least contain state
 
 	'''
 	assert not(depth and depth_gt and depth_lt==1) , "depth_lt needs to be 2 at least."

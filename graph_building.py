@@ -12,7 +12,7 @@
 		mean entity sig over all docs
 		sum of edge weights over all docs
 '''
-
+import re
 import json
 import pandas as pd
 import numpy as np
@@ -22,6 +22,50 @@ from os import listdir, path as p
 from pprint import pprint
 from collections import defaultdict
 from preprocessing import texts2NER, NER2texts
+from pipeline_config import get_folder_names, filter_entity
+
+def replace_all(NERs):
+	replacement_dict = filter_entity()['replacement']
+	
+	def replace_name(e):
+		'''
+		e > e.text
+
+		example: 
+		
+		realDonaldTrump > Donald Trump
+		realdonaldtrump > realdonaldtrump
+		TESTED
+		'''
+		def is_person(e):
+			qualified_types = ["PERSON", "FAC"]
+			return e.get("type") in qualified_types 
+
+		if is_person(e):
+			out = re.findall("[A-Z][a-z]+", e.get("text"))# *: Scott Morrison P M; +: Scott Morrison
+			out = " ".join(out) if out else e.get("text")
+
+			return out
+		return e.get("text")
+
+	def replace_by_dict(token):
+		if token in replacement_dict: token = replacement_dict[token]
+		return token
+	
+	def remove_RT(token):
+		out = token[3:] if token.startswith("RT ") else token
+		out = token[:-5] if token.endswith(" &amp") else token
+		out = token[1:] if token.startswith("#") else token
+
+		return out
+
+	for NER in NERs:
+		yield {
+			"text":replace_by_dict(remove_RT(replace_name(NER))),
+			"start_char": NER.get("start_char"),
+			"end_char": NER.get("end_char"),
+			"type":NER.get("type")
+			}
 
 def get_NER_text(docs):
 	'''
@@ -131,35 +175,41 @@ def get_knowledge_graph(texts=None, NERs=None, e_only=False, edge_only=False, sa
 				"word_index_dict": get_NER_indexes(docs)
 			}
 
-def main(from_directory, to_directory, NER_directory=None):
+def main(save_NER=False):
 	'''
 		get_knowledge_graph for all files under directory.
 	
 	'''
-	bti = len(listdir(to_directory))
+	from_directory, to_directory, NER_directory= get_folder_names()[3], get_folder_names()[5], get_folder_names()[4]
+
+	# bti = len(listdir(to_directory))
 	for i, file in enumerate(listdir(from_directory)):
-		print(i, file)
-		if i> bti or i==bti:
-			save_NER = p.join(NER_directory, file) if NER_directory else None
+		print("\n\n",i, file)
+		# if i> bti or i==bti:
+		save_NER = p.join(NER_directory, file) if save_NER else None
 
-			texts = json.load(open(p.join(from_directory, file)))
-			print("Texts loaded for %s" %file)
+		# texts = json.load(open(p.join(from_directory, file)))
+		NERss = json.load(open(p.join(NER_directory, file)))
+		print("\nNERs loaded for %s" %file)
 
-			graph = get_knowledge_graph(texts=texts, save_NER=save_NER)
-			print("Graph painted.")
-			
-			json.dump(graph, open(p.join(to_directory, file), "w"))
-			print("Done for %s." %file)
+		NERss = [list(replace_all(NERs)) for NERs in NERss]
+		print("\nPreprocessing done.")
 
-			del graph #space management
+		graph = get_knowledge_graph(NERs=NERss, save_NER=save_NER)
+		print("\nGraph painted.")
+		
+		json.dump(graph, open(p.join(to_directory, file), "w"))
+		print("\nDone for %s." %file)
+
+		del graph #space management
 
 
 if __name__ == '__main__':
-	# main("4.Get Tweets", "6.Graphs", NER_directory="5.Get NER Entities")
+	main()
 
 	# NERs = json.load(open("5.Get NER Entities/2020-03-28.json"))
 
 	# out = get_knowledge_graph(NERs=NERs)
-	graph = json.load(open("5.Graphs/2020-03-28.json"))
-	out = graph['edge_weights']
-	pprint(out)
+	# graph = json.load(open("5.Graphs/2020-03-28.json"))
+	# out = graph['edge_weights']
+	# pprint(out)

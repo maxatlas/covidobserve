@@ -17,6 +17,7 @@ from os import environ as e
 from pipeline_config import filter_by_loc, filter_en, filter_by_au, get_folder_names
 from graph_building import get_knowledge_graph
 from preprocessing import texts2NER
+from time_series_analysis import get_peaking_entities
 
 def step1(file_folder, file_name, loc_folder):
 	#Step 1. Filter by Location
@@ -37,7 +38,7 @@ def step1(file_folder, file_name, loc_folder):
 
 def step2(tweet_ids):
 	#Step 2. Twarc Hydration
-	print("Start Twarc hydation.")
+	print("\n\nStart Twarc hydation.")
 
 	twarc = Twarc(e["TWITTER_API_KEY"], e["TWITTER_API_SECRET_KEY"], e["TWITTER_ACCESS_TOKEN"], e["TWITTER_ACCESS_TOKEN_SECRET"])
 
@@ -50,7 +51,7 @@ def step2(tweet_ids):
 
 def step3(tweets, text_folder, file_name):
 	#Step 3. Filter by English
-	print("Start filter by English and get full_text.")
+	print("\n\nStart filter by English and get full_text.")
 	full_texts = []
 	for tweet in tweets: full_texts.append(filter_en(tweet))
 	tweet_number = len(full_texts)
@@ -62,7 +63,7 @@ def step3(tweets, text_folder, file_name):
 
 def step4(full_texts, ner_folder, file_name, tweets_per_round):
 	#Step 4. NER tagging
-	print("Start NER tagging...")
+	print("\n\nStart NER tagging...")
 	full_texts = [text for _,text in full_texts] #remove tweet_id
 
 	start = time.time()
@@ -79,7 +80,7 @@ def step4(full_texts, ner_folder, file_name, tweets_per_round):
 
 def step5(NERs, graph_folder, file_name):
 	#Step 5. Get graphs
-	print("Start graph generation...")
+	print("\n\nStart graph generation...")
 	
 	start = time.time()
 	graph = get_knowledge_graph(NERs=NERs)
@@ -92,7 +93,6 @@ def step5(NERs, graph_folder, file_name):
 
 	return graph
 
-
 def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 	'''
 		Need to specify data if not start_from = 1
@@ -101,7 +101,7 @@ def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 	assert end_at > start_from, "end_at (%i) needs to be bigger than start_from (%i)" %(end_at, start_from)
 	
 	#init objects
-	file_folder, loc_folder, text_folder, ner_folder, graph_folder = get_folder_names().values()
+	file_folder, loc_folder, text_folder, ner_folder, graph_folder, _ = get_folder_names().values()
 
 	if start_from<2 and end_at>0:
 		tweet_ids = step1(file_folder, file_name, loc_folder)
