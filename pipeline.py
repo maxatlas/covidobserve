@@ -133,8 +133,8 @@ def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 if __name__ == '__main__':
 	from sys import argv
 	if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")
-	# main(argv[1])
+	main(argv[1])
 
-	data = json.load(open(p.join(argv[1], argv[2])))
+	# data = json.load(open(p.join(argv[1], argv[2])))
 	
-	main(argv[2], data, start_from=4)
+	# main(argv[2], data, start_from=4)

@@ -53,7 +53,7 @@ def divide2blocks(graphs, days_per_block):
 
 	return out
 
-def get_e_sigs(e_sigs, indexes, minimum=0.001):
+def get_e_sigs(e_sigs, indexes, minimum):
 	'''
 		e_sigs: DataFrame with row as entity, column as date.
 		indexes(column): dates
@@ -75,13 +75,13 @@ def get_e_sigs(e_sigs, indexes, minimum=0.001):
 	
 	return out
 
-def get_peaking_entities(X=5, Y=1, days_per_block=1):
+def get_peaking_entities(X=5, Y=1, days_per_block=1, minimum=0.001):
 	'''
 		days_per_block: if =7, 7 days to make up a time block.
 		TESTED.
 
 	'''
-	def get_e_sigs_from_folder(folder, days_per_block):
+	def get_e_sigs_from_folder(folder, days_per_block, minimum):
 		'''
 			entity significance in pandas.Dataframe format which can be transformed to csv easily.
 			TESTED.
@@ -91,11 +91,11 @@ def get_peaking_entities(X=5, Y=1, days_per_block=1):
 		graphs = [json.load(open(p.join(folder, file))) for file in files]
 		if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
 		indexes = [graph["date"] for graph in graphs]
-		return get_e_sigs([graph["e_sigs_mean"] for graph in graphs], indexes)
+		return get_e_sigs([graph["e_sigs_mean"] for graph in graphs], indexes, minimum)
 
 	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
 
-	e_sigs = get_e_sigs_from_folder(from_folder, days_per_block)
+	e_sigs = get_e_sigs_from_folder(from_folder, days_per_block, minimum)
 	if to_folder: e_sigs.to_csv(p.join(to_folder, "e_sigs.csv"))
 
 	e_sigs_rolling_mean = e_sigs.rolling(X).mean()
@@ -115,4 +115,4 @@ def get_peaking_entities(X=5, Y=1, days_per_block=1):
 
 
 if __name__ == '__main__':
-	get_peaking_entities(days_per_block=2)
+	get_peaking_entities(days_per_block=3)

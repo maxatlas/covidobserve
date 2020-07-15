@@ -38,19 +38,23 @@ def replace_all(NERs):
 		return token
 	
 	def remove_RT(token):
-		out = token[3:] if token.startswith("RT ") else token
-		out = token[:-5] if token.endswith(" &amp") else token
-		out = token[1:] if token.startswith("#") else token
+		token = token[3:] if token.startswith("RT ") else token
+		token = token[1:] if token.startswith("#") else token
+		token = token[:-1] if token.endswith(" ") else token
+		
+		token = re.sub("&amp", "", token)
 
-		return out
+		return token
 
 	for NER in NERs:
-		yield {
-			"text":replace_by_dict(remove_RT(replace_name(NER))),
-			"start_char": NER.start_char,
-			"end_char": NER.end_char,
-			"type":NER.type
-			}
+		text = replace_by_dict(remove_RT(replace_name(NER)))
+		if text:
+			yield {
+				"text":text,
+				"start_char": NER.start_char,
+				"end_char": NER.end_char,
+				"type":NER.type
+				}
 
 def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_round=500000):
 	'''
