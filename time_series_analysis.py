@@ -63,7 +63,7 @@ def get_e_sigs(e_sigs, indexes, minimum):
 	'''
 	assert len(e_sigs)==len(indexes)
 
-	out = pd.DataFrame(data=[]).rename_axis("NERs")
+	out = pd.DataFrame(data=[], dtype="float64").rename_axis("NERs")
 	for name, e_sig in zip(indexes, e_sigs): 
 		e_sig = pd.Series(e_sig).to_frame().rename_axis("NERs")
 		e_sig.columns=[name]
@@ -72,7 +72,7 @@ def get_e_sigs(e_sigs, indexes, minimum):
 	out = out.fillna(0)
 	num = out._get_numeric_data()
 	num[num<minimum]=0
-	
+
 	return out
 
 def get_peaking_entities(X=5, Y=1, days_per_block=1, minimum=0.001):
@@ -96,6 +96,7 @@ def get_peaking_entities(X=5, Y=1, days_per_block=1, minimum=0.001):
 	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
 
 	e_sigs = get_e_sigs_from_folder(from_folder, days_per_block, minimum)
+	# e_sigs = remove_trend(e_sigs)
 	if to_folder: e_sigs.to_csv(p.join(to_folder, "e_sigs.csv"))
 
 	e_sigs_rolling_mean = e_sigs.rolling(X).mean()
@@ -111,8 +112,24 @@ def get_peaking_entities(X=5, Y=1, days_per_block=1, minimum=0.001):
 
 	return out
 
+def remove_trend(df):
+	'''
+		df: output of get_e_sigs()
+		Needs testing.
+	'''
+	df = df.transpose()
+	for col in df.columns:
+		to_remove = np.array(df[col].to_list()[1:]+[0])
+		first_diff = abs(df[col].to_numpy()-to_remove)
 
+		df[col] = df[col] * (first_diff>first_diff.mean())
 
+	return df.transpose()
 
 if __name__ == '__main__':
 	get_peaking_entities(days_per_block=3)
+	# folder = get_folder_names()[5]
+	# graphs = [json.load(open(p.join(folder, file))) for file in sorted(listdir(folder))]
+	# df = get_e_sigs([graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs], 0.001)
+	# out = remove_trend(df)
+	# print(out.loc[["Australia"]])

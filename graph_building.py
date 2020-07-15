@@ -19,6 +19,7 @@ import numpy as np
 
 from pprint import pprint
 from os import listdir, path as p
+from utils import remove_RT
 from pprint import pprint
 from collections import defaultdict
 from preprocessing import texts2NER, NER2texts
@@ -53,12 +54,7 @@ def replace_all(NERs):
 		return token
 	
 	def remove_RT(token):
-		token = token[3:] if token.startswith("RT ") else token
-		token = re.sub("&amp", "", token)
-		token = token[1:] if token.startswith("#") else token
-		token = token[:-1] if token.endswith(" ") else token
-
-		return token
+		return remove_RT(token)
 
 	for NER in NERs:
 		text = replace_by_dict(remove_RT(replace_name(NER)))

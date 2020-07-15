@@ -6,6 +6,17 @@ import json
 from os import listdir, path as p
 from pprint import pprint
 
+def remove_RT(token):
+	token = token[3:] if token.startswith("RT ") else token
+	token = token[1:] if token.startswith("#") else token
+	
+	token = re.sub("&amp", "&", token)
+	token = token[:-1] if token.endswith(" ") else token
+	token = token[:-1] if token.endswith("&") else token
+	token = token[:-1] if token.endswith(" ") else token
+
+	return token
+		
 def get_tweet_by_id(tweet_id):
 	from os import environ as e
 	from twarc import Twarc
@@ -15,11 +26,11 @@ def get_tweet_by_id(tweet_id):
 	tweet = list(twarc.hydrate([tweet_id]))
 	if tweet:
 		tweet=tweet[0]
-		if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
+		if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out =  tweet['full_text']
 		else:
 			try:
-				out = (tweet['id'], tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"])
-			except Exception: out = (tweet['id'], tweet['full_text'])
+				out = tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"]
+			except Exception: out = tweet['full_text']
 
 	return out
 

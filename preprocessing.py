@@ -8,7 +8,7 @@ import json
 import re
 
 from pprint import pprint
-from utils import get_name
+from utils import get_name, remove_RT
 from pipeline_config import filter_entity
 
 filter_entity_dict=filter_entity()
@@ -38,13 +38,7 @@ def replace_all(NERs):
 		return token
 	
 	def remove_RT(token):
-		token = token[3:] if token.startswith("RT ") else token
-		token = token[1:] if token.startswith("#") else token
-		token = token[:-1] if token.endswith(" ") else token
-		
-		token = re.sub("&amp", "", token)
-
-		return token
+		return remove_RT(token)
 
 	for NER in NERs:
 		text = replace_by_dict(remove_RT(replace_name(NER)))
