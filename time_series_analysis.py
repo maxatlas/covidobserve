@@ -55,8 +55,8 @@ def divide2blocks(graphs, days_per_block):
 
 def get_e_sigs(e_sigs, indexes, minimum=0.001):
 	'''
-		e_sigs: {e_text:significance #(count/sum)}
-		indexes: dates
+		e_sigs: DataFrame with row as entity, column as date.
+		indexes(column): dates
 
 		TESTED
 
@@ -77,6 +77,7 @@ def get_e_sigs(e_sigs, indexes, minimum=0.001):
 
 def get_peaking_entities(X=5, Y=1, days_per_block=1):
 	'''
+		days_per_block: if =7, 7 days to make up a time block.
 		TESTED.
 
 	'''
