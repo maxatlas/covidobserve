@@ -18,70 +18,16 @@ from graph_building import get_knowledge_graph
 from pipeline_config import get_folder_names
 from collections import defaultdict
 
-def get_e_sigs(folder):
-	'''
-		entity significance in pandas.Dataframe format which can be transformed to csv easily.
-		TESTED.
-
-	'''
-	def get_e_sigs(e_sigs, indexes, minimum=0.001):
-		'''
-			e_sigs: {e_text:significance #(count/sum)}
-			
-			Space and time optimization needed?
-
-		'''
-		assert len(e_sigs)==len(indexes)
-
-		out = pd.DataFrame(data=[]).rename_axis("NERs")
-		for name, e_sig in zip(indexes, e_sigs): 
-			e_sig = pd.Series(e_sig).to_frame().rename_axis("NERs")
-			e_sig.columns=[name]
-			out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
-		
-		out = out.fillna(0)
-		num = out._get_numeric_data()
-		num[num<minimum]=0
-		
-		return out
-
-	files = sorted(listdir(folder))
-	e_sigs = [json.load(open(p.join(folder, file)))["e_sigs_mean"] for file in files]
-	indexes = [index[:-5] for index in files]
-	
-	return get_e_sigs(e_sigs, indexes)
-
-def get_peaking_entities(X=5, Y=1):
-	'''
-		TESTED.
-
-	'''
-	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
-
-	e_sigs = get_e_sigs(from_folder)
-	if to_folder: e_sigs.to_csv(p.join(to_folder, "e_sigs.csv"))
-
-	e_sigs_rolling_mean = e_sigs.rolling(X).mean()
-	if to_folder: e_sigs_rolling_mean.to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
-
-	e_sigs_rolling_std = e_sigs.rolling(X).std()
-	if to_folder: e_sigs_rolling_std.to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
-	
-	out = e_sigs - e_sigs_rolling_mean > Y*e_sigs_rolling_std
-	out = out.replace(False, np.nan)
-	out = out.replace(1.0, True)
-	if to_folder: out.to_csv(p.join(to_folder, "peaking_entities.csv"))
-
-	return out
-
-
-def divide2blocks(graphs, dates, days_per_block=7):
+def divide2blocks(graphs, days_per_block):
 	'''
 		e.g.
 		input: graphs (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
 		output: graphs length=35/7=5
 			e_sigs, edge_weights are merged,
 			doc_indexes:{word: index}
+
+		TESTED.
+
 	'''
 	def init_block():
 		return {"e_sigs_mean":pd.Series([], dtype="float64"),
@@ -100,16 +46,72 @@ def divide2blocks(graphs, dates, days_per_block=7):
 		block["date"]+=graph["date"]+","
 
 		if (i+1)%days_per_block==0:
-			block["e_sigs_mean"] = (block["e_sigs_mean"]/days_per_block).to_dict()
-			block["edge_weights"] = (block["edge_weights"]/days_per_block).to_dict()
+			block["e_sigs_mean"] = (block["e_sigs_mean"]/days_per_block).to_dict() #normalize
+			block["edge_weights"] = (block["edge_weights"]/days_per_block).to_dict() #normalize
 			block["date"]=block["date"][:-1]
 			out.append(block)
 
 	return out
 
+def get_e_sigs(e_sigs, indexes, minimum=0.001):
+	'''
+		e_sigs: {e_text:significance #(count/sum)}
+		indexes: dates
+
+		TESTED
+
+	'''
+	assert len(e_sigs)==len(indexes)
+
+	out = pd.DataFrame(data=[]).rename_axis("NERs")
+	for name, e_sig in zip(indexes, e_sigs): 
+		e_sig = pd.Series(e_sig).to_frame().rename_axis("NERs")
+		e_sig.columns=[name]
+		out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
+	
+	out = out.fillna(0)
+	num = out._get_numeric_data()
+	num[num<minimum]=0
+	
+	return out
+
+def get_peaking_entities(X=5, Y=1, days_per_block=1):
+	'''
+		TESTED.
+
+	'''
+	def get_e_sigs_from_folder(folder, days_per_block):
+		'''
+			entity significance in pandas.Dataframe format which can be transformed to csv easily.
+			TESTED.
+
+		'''
+		files = sorted(listdir(folder))
+		graphs = [json.load(open(p.join(folder, file))) for file in files]
+		if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
+		indexes = [graph["date"] for graph in graphs]
+		return get_e_sigs([graph["e_sigs_mean"] for graph in graphs], indexes)
+
+	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
+
+	e_sigs = get_e_sigs_from_folder(from_folder, days_per_block)
+	if to_folder: e_sigs.to_csv(p.join(to_folder, "e_sigs.csv"))
+
+	e_sigs_rolling_mean = e_sigs.rolling(X).mean()
+	if to_folder: e_sigs_rolling_mean.to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
+
+	e_sigs_rolling_std = e_sigs.rolling(X).std()
+	if to_folder: e_sigs_rolling_std.to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
+	
+	out = e_sigs - e_sigs_rolling_mean > Y*e_sigs_rolling_std
+	out = out.replace(False, np.nan)
+	out = out.replace(1.0, True)
+	if to_folder: out.to_csv(p.join(to_folder, "peaking_entities.csv"))
+
+	return out
+
+
+
 
 if __name__ == '__main__':
-	graphs = [json.load(open(p.join(get_folder_names()[5], file))) for file in sorted(listdir(get_folder_names()[5]))]
-	dates = [file[:-5] for file in sorted(listdir(get_folder_names()[5]))]
-	blocks = divide2blocks(graphs, dates)
-	json.dump(blocks, open("samples/blocks.json", "w"))
+	get_peaking_entities(days_per_block=2)

@@ -5,7 +5,14 @@ from preprocess_config import filter_by_au, filter_by_city, filter_by_loc, filte
 from collections import defaultdict
 import time, json
 
-def 
+def test_divide2blocks():
+	from time_series_analysis import divide2blocks
+	
+	graphs = [json.load(open(p.join(get_folder_names()[5], file))) for file in sorted(listdir(get_folder_names()[5]))]
+	dates = [file[:-5] for file in sorted(listdir(get_folder_names()[5]))]
+	blocks = divide2blocks(graphs, dates)
+	json.dump(blocks, open("samples/blocks.json", "w"))
+
 def get_tags(sentence):
 	tags = pos_tag(TweetTokenizer().tokenize(sentence))
 	tags = st.tag([tag[0] for tag in tags])
