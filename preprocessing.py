@@ -8,7 +8,7 @@ import json
 import re
 
 from pprint import pprint
-from utils import get_name, remove_RT
+from utils import get_name, alter_token
 from pipeline_config import filter_entity
 
 filter_entity_dict=filter_entity()
@@ -36,12 +36,9 @@ def replace_all(NERs):
 	def replace_by_dict(token):
 		if token in replacement_dict: token = replacement_dict[token]
 		return token
-	
-	def remove_RT(token):
-		return remove_RT(token)
 
 	for NER in NERs:
-		text = replace_by_dict(remove_RT(replace_name(NER)))
+		text = replace_by_dict(alter_token(replace_name(NER)))
 		if text:
 			yield {
 				"text":text,

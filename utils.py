@@ -6,7 +6,7 @@ import json
 from os import listdir, path as p
 from pprint import pprint
 
-def remove_RT(token):
+def alter_token(token):
 	token = token[3:] if token.startswith("RT ") else token
 	token = token[1:] if token.startswith("#") else token
 	
