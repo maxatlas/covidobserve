@@ -16,6 +16,7 @@ from os import listdir, path as p
 from preprocessing import texts2NER, NER2texts
 from graph_building import get_knowledge_graph
 from pipeline_config import get_folder_names
+from collections import defaultdict
 
 def get_e_sigs(folder):
 	'''
@@ -23,7 +24,7 @@ def get_e_sigs(folder):
 		TESTED.
 
 	'''
-	def get_e_sigs(e_sigs, indexes):
+	def get_e_sigs(e_sigs, indexes, minimum=0.001):
 		'''
 			e_sigs: {e_text:significance #(count/sum)}
 			
@@ -40,7 +41,7 @@ def get_e_sigs(folder):
 		
 		out = out.fillna(0)
 		num = out._get_numeric_data()
-		num[num<0.001]=0
+		num[num<minimum]=0
 		
 		return out
 
@@ -73,5 +74,42 @@ def get_peaking_entities(X=5, Y=1):
 
 	return out
 
+
+def divide2blocks(graphs, dates, days_per_block=7):
+	'''
+		e.g.
+		input: graphs (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
+		output: graphs length=35/7=5
+			e_sigs, edge_weights are merged,
+			doc_indexes:{word: index}
+	'''
+	def init_block():
+		return {"e_sigs_mean":pd.Series([], dtype="float64"),
+				"edge_weights":pd.Series([], dtype="float64"),
+				"word_index_dict":defaultdict(list),
+				"docs_length":0,
+				"date":""}
+
+	out, block=[], init_block()
+	for i, graph in enumerate(graphs):
+		if (i+1)%days_per_block==1: block=init_block()
+		block['e_sigs_mean']=block['e_sigs_mean'].add(pd.Series(graph['e_sigs_mean'],dtype="float64"), fill_value=0)
+		block['edge_weights']=block['edge_weights'].add(pd.Series(graph['edge_weights'],dtype="float64"), fill_value=0)
+		for word in graph["word_index_dict"]: block["word_index_dict"][word]+=(np.array(graph["word_index_dict"][word])+block["docs_length"]).tolist()
+		block['docs_length']+=graph['docs_length']
+		block["date"]+=graph["date"]+","
+
+		if (i+1)%days_per_block==0:
+			block["e_sigs_mean"] = (block["e_sigs_mean"]/days_per_block).to_dict()
+			block["edge_weights"] = (block["edge_weights"]/days_per_block).to_dict()
+			block["date"]=block["date"][:-1]
+			out.append(block)
+
+	return out
+
+
 if __name__ == '__main__':
-	get_peaking_entities()
+	graphs = [json.load(open(p.join(get_folder_names()[5], file))) for file in sorted(listdir(get_folder_names()[5]))]
+	dates = [file[:-5] for file in sorted(listdir(get_folder_names()[5]))]
+	blocks = divide2blocks(graphs, dates)
+	json.dump(blocks, open("samples/blocks.json", "w"))

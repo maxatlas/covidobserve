@@ -53,19 +53,22 @@ def replace_all(NERs):
 		return token
 	
 	def remove_RT(token):
-		out = token[3:] if token.startswith("RT ") else token
-		out = token[:-5] if token.endswith(" &amp") else token
-		out = token[1:] if token.startswith("#") else token
+		token = token[3:] if token.startswith("RT ") else token
+		token = re.sub("&amp", "", token)
+		token = token[1:] if token.startswith("#") else token
+		token = token[:-1] if token.endswith(" ") else token
 
-		return out
+		return token
 
 	for NER in NERs:
-		yield {
-			"text":replace_by_dict(remove_RT(replace_name(NER))),
-			"start_char": NER.get("start_char"),
-			"end_char": NER.get("end_char"),
-			"type":NER.get("type")
-			}
+		text = replace_by_dict(remove_RT(replace_name(NER)))
+		if text:
+			yield {
+				"text":text,
+				"start_char": NER.get("start_char"),
+				"end_char": NER.get("end_char"),
+				"type":NER.get("type")
+				}
 
 def get_NER_text(docs):
 	'''
@@ -138,14 +141,13 @@ def get_edge_weights_all_docs(docs):
 	'''
 	print("\tStart getting edge weights...")
 	out = pd.Series([], dtype="float64")
-	for i, doc in enumerate(docs):
-		if i%1000==0: print("\t\tat:",i)
-		tf = get_e_sig(doc)
-		out = out.add(get_edge_weights_per_doc(tf), fill_value=0)
+
+	for doc in docs: out.add(get_edge_weights_per_doc(get_e_sig(doc)), fill_value=0)
+	
 	print("\tDone.")
 	return out
 
-def get_knowledge_graph(texts=None, NERs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
+def get_knowledge_graph(date, texts=None, NERs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
 	'''
 		Get knowledge graph.
 		
@@ -172,7 +174,9 @@ def get_knowledge_graph(texts=None, NERs=None, e_only=False, edge_only=False, sa
 	else: return {
 				"e_sigs_mean": get_e_sigs_mean(docs).to_dict(),
 				"edge_weights": get_edge_weights_all_docs(docs).to_dict(),
-				"word_index_dict": get_NER_indexes(docs)
+				"word_index_dict": get_NER_indexes(docs),
+				"docs_length":len(docs),
+				"date":date,
 			}
 
 def main(save_NER=False):
@@ -182,7 +186,7 @@ def main(save_NER=False):
 	'''
 	from_directory, to_directory, NER_directory= get_folder_names()[3], get_folder_names()[5], get_folder_names()[4]
 
-	# bti = len(listdir(to_directory))
+	bti = len(listdir(NER_directory))
 	for i, file in enumerate(listdir(from_directory)):
 		print("\n\n",i, file)
 		# if i> bti or i==bti:
@@ -194,8 +198,8 @@ def main(save_NER=False):
 
 		NERss = [list(replace_all(NERs)) for NERs in NERss]
 		print("\nPreprocessing done.")
-
-		graph = get_knowledge_graph(NERs=NERss, save_NER=save_NER)
+		print(file[:-5])
+		graph = get_knowledge_graph(file[:-5], NERs=NERss, save_NER=save_NER)
 		print("\nGraph painted.")
 		
 		json.dump(graph, open(p.join(to_directory, file), "w"))

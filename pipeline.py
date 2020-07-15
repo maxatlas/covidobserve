@@ -78,12 +78,12 @@ def step4(full_texts, ner_folder, file_name, tweets_per_round):
 
 	return NERs
 
-def step5(NERs, graph_folder, file_name):
+def step5(NERs, graph_folder, file_name, date):
 	#Step 5. Get graphs
 	print("\n\nStart graph generation...")
 	
 	start = time.time()
-	graph = get_knowledge_graph(NERs=NERs)
+	graph = get_knowledge_graph(date, NERs=NERs)
 	end=time.time()
 
 	print("\tStep5 - Graph generation takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
@@ -125,7 +125,7 @@ def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 
 	if start_from<6 and end_at>4:
 		if start_from==5: NERs = data
-		graph = step5(NERs, graph_folder, file_name)
+		graph = step5(NERs, graph_folder, file_name, file_name[:-5])
 		del NERs
 
 	print("\nPipeline compelete for %s" %file_name)
