@@ -19,7 +19,7 @@ import numpy as np
 
 from pprint import pprint
 from os import listdir, path as p
-from utils import remove_RT
+from utils import alter_token
 from pprint import pprint
 from collections import defaultdict
 from preprocessing import texts2NER, NER2texts
@@ -52,12 +52,9 @@ def replace_all(NERs):
 	def replace_by_dict(token):
 		if token in replacement_dict: token = replacement_dict[token]
 		return token
-	
-	def remove_RT(token):
-		return remove_RT(token)
 
 	for NER in NERs:
-		text = replace_by_dict(remove_RT(replace_name(NER)))
+		text = replace_by_dict(alter_token(replace_name(NER)))
 		if text:
 			yield {
 				"text":text,
