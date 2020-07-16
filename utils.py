@@ -14,6 +14,7 @@ def alter_token(token):
 	token = token[:-1] if token.endswith(" ") else token
 	token = token[:-1] if token.endswith("&") else token
 	token = token[:-1] if token.endswith(" ") else token
+	token = token[:-2] if token.endswith("'s") else token
 
 	return token
 		
