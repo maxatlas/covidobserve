@@ -21,8 +21,8 @@ from collections import defaultdict
 def divide2blocks(graphs, days_per_block):
 	'''
 		e.g.
-		input: list, graphs (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
-		output: dict, graphs length=35/7=5
+		input: list, [graphs] (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
+		output: list, [block] length=35/7=5
 			e_sigs, edge_weights are merged,
 			doc_indexes:{word: index}
 
@@ -57,6 +57,14 @@ def divide2blocks(graphs, days_per_block):
 def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 	'''
 		TESTED.
+		X: int, sliding window size
+		Y: int, # of std away from mean to be considered as peaking entities
+		minimum: float, threshold significance to be PE
+		to_folder: string, empty if won't save.
+		save: bool.
+		
+		output: 
+			{entity_text: [timeblock]}
 
 	'''
 
@@ -79,6 +87,7 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 			graphs: [graph]
 			graph: output of graph_building > get_knowledge_graph
 			
+			output: DataFrame with date as column and NER as row
 			TESTED
 		'''
 		e_sigs, indexes=[graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs]
@@ -124,11 +133,13 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=True):
 	'''
 		days_per_block: if =7, 7 days to make up a time block.
+
 	'''
 	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
 	files = sorted(listdir(from_folder))
 	graphs = [json.load(open(p.join(from_folder, file))) for file in sorted(listdir(from_folder))]
 	if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
+
 	return get_peaking_entities(graphs, X, Y, minimum, to_folder, save)
 
 if __name__ == '__main__':
