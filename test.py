@@ -5,6 +5,14 @@ from preprocess_config import filter_by_au, filter_by_city, filter_by_loc, filte
 from collections import defaultdict
 import time, json
 
+def test_e2docs():
+	from topic_summarization import e2docs
+	
+	date, e="2020-04-02", "Chinese Nationals"
+	out=e2docs(e, date, json.load(open("5.Graphs/%s.json"%date))['word_index_dict'])
+	pprint(out)
+	print(len(out))
+
 def test_divide2blocks():
 	from time_series_analysis import divide2blocks
 	

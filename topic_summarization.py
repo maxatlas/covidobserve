@@ -10,6 +10,7 @@
 
 import json
 
+from pprint import pprint
 from os import listdir, path as p
 from pipeline_config import get_folder_names
 
@@ -21,6 +22,8 @@ def e2docs(entity_text, timeblock, word_index_dict):
 
 		output: [full_texts]
 
+		TESTED.
+
 	'''
 
 	full_texts = []
@@ -28,3 +31,8 @@ def e2docs(entity_text, timeblock, word_index_dict):
 
 	return [full_texts[i] for i in word_index_dict[entity_text]]
 
+if __name__ == '__main__':
+	date, e="2020-04-02", "Chinese Nationals"
+	out=e2docs(e, date, json.load(open("5.Graphs/%s.json"%date))['word_index_dict'])
+	pprint(out)
+	print(len(out))
