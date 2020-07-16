@@ -144,6 +144,7 @@ def get_knowledge_graph(date, texts=None, NERs=None, e_only=False, edge_only=Fal
 	'''
 		Get knowledge graph.
 		
+		date: string. e.g. "2020-03-28"
 		texts: [full_text]
 		docs: [[NER]]
 		save_NER: file/filename

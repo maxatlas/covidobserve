@@ -21,8 +21,8 @@ from collections import defaultdict
 def divide2blocks(graphs, days_per_block):
 	'''
 		e.g.
-		input: graphs (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
-		output: graphs length=35/7=5
+		input: list, graphs (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
+		output: dict, graphs length=35/7=5
 			e_sigs, edge_weights are merged,
 			doc_indexes:{word: index}
 
@@ -38,7 +38,8 @@ def divide2blocks(graphs, days_per_block):
 
 	out, block=[], init_block()
 	for i, graph in enumerate(graphs):
-		if (i+1)%days_per_block==1: block=init_block()
+		if (i+1)%days_per_block==1 or days_per_block==1: block=init_block()
+		print(i, type(block["e_sigs_mean"]))
 		block['e_sigs_mean']=block['e_sigs_mean'].add(pd.Series(graph['e_sigs_mean'],dtype="float64"), fill_value=0)
 		block['edge_weights']=block['edge_weights'].add(pd.Series(graph['edge_weights'],dtype="float64"), fill_value=0)
 		for word in graph["word_index_dict"]: block["word_index_dict"][word]+=(np.array(graph["word_index_dict"][word])+block["docs_length"]).tolist()
@@ -72,7 +73,7 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 
 		return df
 
-	
+
 	def get_e_sigs(graphs):
 		'''
 			graphs: [graph]
@@ -89,7 +90,19 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 			out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
 		
 		out = out.fillna(0)
+		return out
 
+	def save_CSV(df, save_folder):
+		df = df.replace(False, np.nan)
+		df = df.replace(1.0, True)
+
+		df.transpose().to_csv(p.join(save_folder, "peaking_entities.csv"))
+
+	def get_pe(df):
+		out = {}
+		for NER in df.columns:
+			dates = df[NER].loc[df[NER].values].index.to_list()
+			if dates: out[NER] = dates
 		return out
 
 	e_sigs = get_e_sigs(graphs).transpose()
@@ -99,30 +112,25 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 
 	e_sigs_rolling = e_sigs.rolling(X, min_periods=X//2, center=True)
 	e_sigs_rolling_mean, e_sigs_rolling_std = e_sigs_rolling.mean(), e_sigs_rolling.std()
-
 	if save: e_sigs_rolling_mean.transpose().to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
 	if save: e_sigs_rolling_std.transpose().to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
 	
-	out = e_sigs * (e_sigs-e_sigs_rolling_mean>Y*e_sigs_rolling_std)
-	out = out > minimum
+	out = (e_sigs * (e_sigs-e_sigs_rolling_mean>Y*e_sigs_rolling_std)) > minimum
+	if save: save_CSV(out, to_folder)
 
-	out = out.replace(False, np.nan)
-	out = out.replace(1.0, True)
-
-	out.transpose().to_csv(p.join(to_folder, "peaking_entities.csv"))
-
-	return out
+	return get_pe(out)
 
 
-def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=False):
+def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=True):
 	'''
 		days_per_block: if =7, 7 days to make up a time block.
 	'''
 	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
 	files = sorted(listdir(from_folder))
-	graphs = [json.load(open(p.join(from_folder, file))) for file in files]
-	graphs = divide2blocks(graphs, days_per_block)
-	return get_peaking_entities(graphs, X, Y, days_per_block, minimum, to_folder, save)
+	graphs = [json.load(open(p.join(from_folder, file))) for file in sorted(listdir(from_folder))]
+	if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
+	return get_peaking_entities(graphs, X, Y, minimum, to_folder, save)
 
 if __name__ == '__main__':
-	main()
+	out = main(save=False)
+	pprint(out)

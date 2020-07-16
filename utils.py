@@ -7,10 +7,11 @@ from os import listdir, path as p
 from pprint import pprint
 
 def alter_token(token):
+	token = re.sub("[\u00a0-\uffff]", "", token)
+	token = re.sub("&amp", "&", token)
+
 	token = token[3:] if token.startswith("RT ") else token
 	token = token[1:] if token.startswith("#") else token
-	
-	token = re.sub("&amp", "&", token)
 	token = token[:-1] if token.endswith(" ") else token
 	token = token[:-1] if token.endswith("&") else token
 	token = token[:-1] if token.endswith(" ") else token
