@@ -53,15 +53,14 @@ def divide2blocks(graphs, days_per_block):
 
 	return out
 
-def get_e_sigs(e_sigs, indexes, minimum):
+def get_e_sigs(graphs):
 	'''
-		e_sigs: DataFrame with row as entity, column as date.
-		indexes(column): dates
-
+		graphs: [graph]
+		graph: output of graph_building > get_knowledge_graph
+		
 		TESTED
-
 	'''
-	assert len(e_sigs)==len(indexes)
+	e_sigs, indexes=[graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs]
 
 	out = pd.DataFrame(data=[], dtype="float64").rename_axis("NERs")
 	for name, e_sig in zip(indexes, e_sigs): 
@@ -70,47 +69,6 @@ def get_e_sigs(e_sigs, indexes, minimum):
 		out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
 	
 	out = out.fillna(0)
-	num = out._get_numeric_data()
-	num[num<minimum]=0
-
-	return out
-
-def get_peaking_entities(X=5, Y=1, days_per_block=1, minimum=0.001, save=False):
-	'''
-		days_per_block: if =7, 7 days to make up a time block.
-		TESTED.
-
-	'''
-	def get_e_sigs_from_folder(folder, days_per_block, minimum):
-		'''
-			entity significance in pandas.Dataframe format which can be transformed to csv easily.
-			TESTED.
-
-		'''
-		files = sorted(listdir(folder))
-		graphs = [json.load(open(p.join(folder, file))) for file in files]
-		if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
-		indexes = [graph["date"] for graph in graphs]
-		return get_e_sigs([graph["e_sigs_mean"] for graph in graphs], indexes, minimum)
-
-	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
-
-	e_sigs = get_e_sigs_from_folder(from_folder, days_per_block, minimum).transpose()
-	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs.csv"))
-	e_sigs = remove_trend(e_sigs)
-	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs_remove_trends.csv"))
-
-	e_sigs_rolling = e_sigs.rolling(X, min_periods=X//2, center=True)
-	e_sigs_rolling_mean, e_sigs_rolling_std = e_sigs_rolling.mean(), e_sigs_rolling.std()
-	# print(e_sigs_rolling_mean["Australia"])
-	if save: e_sigs_rolling_mean.transpose().to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
-	if save: e_sigs_rolling_std.transpose().to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
-	
-	out = e_sigs - e_sigs_rolling_mean > Y*e_sigs_rolling_std
-	out = out.replace(False, np.nan)
-	out = out.replace(1.0, True)
-	
-	out.transpose().to_csv(p.join(to_folder, "peaking_entities.csv"))
 
 	return out
 
@@ -127,18 +85,40 @@ def remove_trend(df):
 
 	return df
 
+def get_peaking_entities(graphs, X, Y, days_per_block, minimum, to_folder, save):
+	'''
+		days_per_block: if =7, 7 days to make up a time block.
+		TESTED.
+
+	'''
+
+	e_sigs = get_e_sigs(graphs).transpose()
+	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs.csv"))
+	e_sigs = remove_trend(e_sigs)
+	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs_remove_trends.csv"))
+
+	e_sigs_rolling = e_sigs.rolling(X, min_periods=X//2, center=True)
+	e_sigs_rolling_mean, e_sigs_rolling_std = e_sigs_rolling.mean(), e_sigs_rolling.std()
+
+	if save: e_sigs_rolling_mean.transpose().to_csv(p.join(to_folder, "e_sigs_rolling_mean.csv"))
+	if save: e_sigs_rolling_std.transpose().to_csv(p.join(to_folder, "e_sigs_rolling_std.csv"))
+	
+	out = e_sigs * (e_sigs-e_sigs_rolling_mean>Y*e_sigs_rolling_std)
+	out = out > minimum
+
+	out = out.replace(False, np.nan)
+	out = out.replace(1.0, True)
+
+	out.transpose().to_csv(p.join(to_folder, "peaking_entities.csv"))
+
+	return out
+
+
+def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=False):
+	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
+	files = sorted(listdir(from_folder))
+	graphs = [json.load(open(p.join(from_folder, file))) for file in files]
+	return get_peaking_entities(graphs, X, Y, days_per_block, minimum, to_folder, save)
+
 if __name__ == '__main__':
-	get_peaking_entities(days_per_block=3, save=True)
-	# folder = get_folder_names()[5]
-	# graphs = [json.load(open(p.join(folder, file))) for file in sorted(listdir(folder))]
-	# df = get_e_sigs([graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs], 0.001)
-	# # out = remove_trend(df)
-	# df=df.transpose()
-	# a = df["@_AfricanUnion"]
-	# to_remove = np.array([a.mean()]+a.to_list()[:-1])
-	# first_diff = abs(a.to_numpy()-to_remove)
-	# a = a*(first_diff > 1*a.std())
-	# print(a.to_list())
-	# print(a.rolling(3).mean().to_list())
-	# print(a.rolling(3).std().to_list())
-	# print(((a-a.rolling(3).mean()>a.rolling(3).std())).to_list())
+	main()

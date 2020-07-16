@@ -1,24 +1,66 @@
 '''
-	Pipeline steps:
+	Pipeline 
+	Stg1:
 		Step 1. Filter by Location
 		Step 2. Twarc Hydration
 		Step 3. Filter by English
 		Step 4. NER tagging
 		Step 5. Get graphs
-
+	Stg2:
+		Step 6. Get peaking entities
+		Step 7. 
 '''
 import json
 import time
 import stanza
 
-from twarc import Twarc
 from os import listdir, path as p
 from os import environ as e
-from pipeline_config import filter_by_loc, filter_en, filter_by_au, get_folder_names
-from graph_building import get_knowledge_graph
-from preprocessing import texts2NER
-from time_series_analysis import get_peaking_entities
 
+
+def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
+	'''
+		Need to specify data if not start_from = 1
+		
+	'''
+
+	from twarc import Twarc
+	from pipeline_config import filter_by_loc, filter_en, filter_by_au, get_folder_names
+	from graph_building import get_knowledge_graph
+	from preprocessing import texts2NER
+	
+	assert end_at > start_from, "end_at (%i) needs to be bigger than start_from (%i)" %(end_at, start_from)
+	
+	#init objects
+	file_folder, loc_folder, text_folder, ner_folder, graph_folder, _ = get_folder_names().values()
+
+	if start_from<2 and end_at>0:
+		tweet_ids = step1(file_folder, file_name, loc_folder)
+	
+	file_name = file_name.split("_")[-1]
+
+	if start_from<3 and end_at>1:
+		if start_from==2: tweet_ids=data
+		tweets = step2(tweet_ids)
+		del tweet_ids #delete no longer needed variables
+
+	if start_from<4 and end_at>2:
+		if start_from==3: tweets = data
+		full_texts = step3(tweets, text_folder, file_name)
+		del tweets #delete no longer needed variables
+	
+	if start_from<5 and end_at>3:
+		if start_from==4: full_texts = data
+		NERs = step4(full_texts, ner_folder, file_name, tweets_per_round)
+		del full_texts
+
+	if start_from<6 and end_at>4:
+		if start_from==5: NERs = data
+		graph = step5(NERs, graph_folder, file_name, file_name[:-5])
+		del NERs
+
+	print("\nPipeline compelete for %s" %file_name)
+	
 def step1(file_folder, file_name, loc_folder):
 	#Step 1. Filter by Location
 	print("\n%s\nStart filtering by location."%file_name)
@@ -93,43 +135,17 @@ def step5(NERs, graph_folder, file_name, date):
 
 	return graph
 
-def main(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
+
+def stg2(X, Y, days_per_block, minimum):
 	'''
-		Need to specify data if not start_from = 1
-		
+		X: int, rolling window size
+		Y: int, # of std away from mean to be identified as peaking entities
+		days_per_block: int, days per time block
+		minimum: float, minimum entity significance to be considered as peaking entities
+
 	'''
-	assert end_at > start_from, "end_at (%i) needs to be bigger than start_from (%i)" %(end_at, start_from)
+	from time_series_analysis import get_peaking_entities
 	
-	#init objects
-	file_folder, loc_folder, text_folder, ner_folder, graph_folder, _ = get_folder_names().values()
-
-	if start_from<2 and end_at>0:
-		tweet_ids = step1(file_folder, file_name, loc_folder)
-	
-	file_name = file_name.split("_")[-1]
-
-	if start_from<3 and end_at>1:
-		if start_from==2: tweet_ids=data
-		tweets = step2(tweet_ids)
-		del tweet_ids #delete no longer needed variables
-
-	if start_from<4 and end_at>2:
-		if start_from==3: tweets = data
-		full_texts = step3(tweets, text_folder, file_name)
-		del tweets #delete no longer needed variables
-	
-	if start_from<5 and end_at>3:
-		if start_from==4: full_texts = data
-		NERs = step4(full_texts, ner_folder, file_name, tweets_per_round)
-		del full_texts
-
-	if start_from<6 and end_at>4:
-		if start_from==5: NERs = data
-		graph = step5(NERs, graph_folder, file_name, file_name[:-5])
-		del NERs
-
-	print("\nPipeline compelete for %s" %file_name)
-
 if __name__ == '__main__':
 	from sys import argv
 	if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")

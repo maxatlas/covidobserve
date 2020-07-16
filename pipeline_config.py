@@ -17,6 +17,7 @@ filter_entity_dict={
 		"BoJo":"Boris Johnson",
 		"ScottMorrison":"Scott Morrison",
 		"scomo":"Scott Morrison",
+		"@ScottMorrisonMP":"Scott Morrison",
 		"coronavirus":"Coronavirus",
 		"CORONAVIRUS":"Coronavirus",
 		"CoronaVirus":"Coronavirus",
