@@ -53,44 +53,44 @@ def divide2blocks(graphs, days_per_block):
 
 	return out
 
-def get_e_sigs(graphs):
+def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 	'''
-		graphs: [graph]
-		graph: output of graph_building > get_knowledge_graph
-		
-		TESTED
-	'''
-	e_sigs, indexes=[graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs]
-
-	out = pd.DataFrame(data=[], dtype="float64").rename_axis("NERs")
-	for name, e_sig in zip(indexes, e_sigs): 
-		e_sig = pd.Series(e_sig).to_frame().rename_axis("NERs")
-		e_sig.columns=[name]
-		out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
-	
-	out = out.fillna(0)
-
-	return out
-
-def remove_trend(df):
-	'''
-		df: output of get_e_sigs()
-		Needs testing.
-	'''
-	for col in df.columns:
-		to_remove = np.array([df[col].mean()]+df[col].to_list()[:-1])
-		first_diff = abs(df[col].to_numpy()-to_remove)
-
-		df[col] = df[col] * (first_diff>1*df[col].std())
-
-	return df
-
-def get_peaking_entities(graphs, X, Y, days_per_block, minimum, to_folder, save):
-	'''
-		days_per_block: if =7, 7 days to make up a time block.
 		TESTED.
 
 	'''
+
+	def remove_trend(df):
+		'''
+			df: output of get_e_sigs()
+			Needs testing.
+		'''
+		for col in df.columns:
+			to_remove = np.array([df[col].mean()]+df[col].to_list()[:-1])
+			first_diff = abs(df[col].to_numpy()-to_remove)
+
+			df[col] = df[col] * (first_diff>1*df[col].std())
+
+		return df
+
+	
+	def get_e_sigs(graphs):
+		'''
+			graphs: [graph]
+			graph: output of graph_building > get_knowledge_graph
+			
+			TESTED
+		'''
+		e_sigs, indexes=[graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs]
+
+		out = pd.DataFrame(data=[], dtype="float64").rename_axis("NERs")
+		for name, e_sig in zip(indexes, e_sigs): 
+			e_sig = pd.Series(e_sig).to_frame().rename_axis("NERs")
+			e_sig.columns=[name]
+			out = out.merge(e_sig, left_on="NERs", right_on="NERs", how="outer")
+		
+		out = out.fillna(0)
+
+		return out
 
 	e_sigs = get_e_sigs(graphs).transpose()
 	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs.csv"))
@@ -115,9 +115,13 @@ def get_peaking_entities(graphs, X, Y, days_per_block, minimum, to_folder, save)
 
 
 def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=False):
+	'''
+		days_per_block: if =7, 7 days to make up a time block.
+	'''
 	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
 	files = sorted(listdir(from_folder))
 	graphs = [json.load(open(p.join(from_folder, file))) for file in files]
+	graphs = divide2blocks(graphs, days_per_block)
 	return get_peaking_entities(graphs, X, Y, days_per_block, minimum, to_folder, save)
 
 if __name__ == '__main__':
