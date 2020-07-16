@@ -21,7 +21,7 @@ from collections import defaultdict
 def divide2blocks(graphs, days_per_block):
 	'''
 		e.g.
-		input: list, [graphs] (sorted by dates) length=35, days_per_block=7, dates=sorted dates of the graph
+		input: list, [graphs] (sorted by timeblocks) length=35, days_per_block=7
 		output: list, [block] length=35/7=5
 			e_sigs, edge_weights are merged,
 			doc_indexes:{word: index}
@@ -34,7 +34,7 @@ def divide2blocks(graphs, days_per_block):
 				"edge_weights":pd.Series([], dtype="float64"),
 				"word_index_dict":defaultdict(list),
 				"docs_length":0,
-				"date":""}
+				"timeblock":""}
 
 	out, block=[], init_block()
 	for i, graph in enumerate(graphs):
@@ -44,12 +44,12 @@ def divide2blocks(graphs, days_per_block):
 		block['edge_weights']=block['edge_weights'].add(pd.Series(graph['edge_weights'],dtype="float64"), fill_value=0)
 		for word in graph["word_index_dict"]: block["word_index_dict"][word]+=(np.array(graph["word_index_dict"][word])+block["docs_length"]).tolist()
 		block['docs_length']+=graph['docs_length']
-		block["date"]+=graph["date"]+","
+		block["timeblock"]+=graph["timeblock"]+","
 
 		if (i+1)%days_per_block==0:
 			block["e_sigs_mean"] = (block["e_sigs_mean"]/days_per_block).to_dict() #normalize
 			block["edge_weights"] = (block["edge_weights"]/days_per_block).to_dict() #normalize
-			block["date"]=block["date"][:-1]
+			block["timeblock"]=block["timeblock"][:-1]
 			out.append(block)
 
 	return out
@@ -64,7 +64,7 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 		save: bool.
 		
 		output: 
-			{entity_text: [timeblock]}
+			{timeblock: [entity]}
 
 	'''
 
@@ -87,10 +87,10 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 			graphs: [graph]
 			graph: output of graph_building > get_knowledge_graph
 			
-			output: DataFrame with date as column and NER as row
+			output: DataFrame with timeblocks as column and NER as row
 			TESTED
 		'''
-		e_sigs, indexes=[graph["e_sigs_mean"] for graph in graphs], [graph["date"] for graph in graphs]
+		e_sigs, indexes=[graph["e_sigs_mean"] for graph in graphs], [graph["timeblock"] for graph in graphs]
 
 		out = pd.DataFrame(data=[], dtype="float64").rename_axis("NERs")
 		for name, e_sig in zip(indexes, e_sigs): 
@@ -109,9 +109,9 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 
 	def get_pe(df):
 		out = {}
-		for NER in df.columns:
-			dates = df[NER].loc[df[NER].values].index.to_list()
-			if dates: out[NER] = dates
+		for timeblock in df.columns:
+			entities = df[timeblock].loc[df[timeblock].values].index.to_list()
+			if entities: out[timeblock] = entities
 		return out
 
 	e_sigs = get_e_sigs(graphs).transpose()
@@ -127,7 +127,7 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 	out = (e_sigs * (e_sigs-e_sigs_rolling_mean>Y*e_sigs_rolling_std)) > minimum
 	if save: save_CSV(out, to_folder)
 
-	return get_pe(out)
+	return get_pe(out.transpose())
 
 
 def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=True):

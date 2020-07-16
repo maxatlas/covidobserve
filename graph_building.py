@@ -170,7 +170,7 @@ def get_knowledge_graph(date, texts=None, NERs=None, e_only=False, edge_only=Fal
 				"edge_weights": get_edge_weights_all_docs(docs).to_dict(),
 				"word_index_dict": get_NER_indexes(docs),
 				"docs_length":len(docs),
-				"date":date,
+				"timeblock":date,
 			}
 
 def main(save_NER=False):

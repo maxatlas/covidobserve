@@ -146,11 +146,21 @@ def stg2(X, Y, days_per_block, minimum):
 
 	'''
 	from time_series_analysis import get_peaking_entities, divide2blocks
+	from topic_summarization import e2docs
+
+	def get_NERi_dicts(graphs):
+		out={}
+		for graph in graphs: NERi_dicts[graph["timeblock"]]=graph["word_index_dict"]
+		return out
+
 	graphs = [json.load(open(p.join(graph_folder, file))) for file in sorted(listdir(graph_folder))]
-	if days_per_block>1: graphs = divide2blocks(graphs, days_per_block) if days_per_block>1
-	PEs =  get_peaking_entities(graphs, X, Y, days_per_block, minimum, pe_folder, save)
-	for PE in PEs:
-		
+	PEs =  get_peaking_entities(divide2blocks(graphs, days_per_block) if days_per_block>1 else graphs, X, Y, days_per_block, minimum, pe_folder, save)
+	
+	NERi_dicts, out = get_NERi_dicts(graphs), defaultdict()
+	
+	for timeblock in PEs:
+		for PE in PEs[timeblock]: full_texts = e2docs(PE, timeblock, NERi_dicts[timeblock])
+
 
 if __name__ == '__main__':
 	from sys import argv

@@ -101,14 +101,6 @@ def get_NERs(text):
 	pipe = stanza.Pipeline(lang='en', processors='tokenize,ner', use_gpu=True)
 	return pipe(text).entities
 
-def NER2texts(e, texts):
-	'''
-		TESTED
-	'''
-	text = delim.join(texts)
-	i = get_NER_list_index(e.end_char, text)
-	return texts[i]
-
 if __name__ == '__main__':
 	sample_texts = json.load(open("4.Get Tweets/2020-03-30.json"))
 	sample_texts = [item[1] for item in sample_texts]
