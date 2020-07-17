@@ -8,7 +8,11 @@
 		Step 5. Get graphs
 	Stg2:
 		Step 6. Get peaking entities
-		Step 7. 
+		Step 7. Trace back to texts.
+		Step 8. Get nouns and noun-phrases.
+		Step 9. KeyGraph.
+		Step 10. WordCloud.
+
 '''
 import json
 import time
@@ -17,17 +21,25 @@ import stanza
 from pipeline_config import get_folder_names
 from os import listdir, path as p
 from os import environ as e
+from collections import defaultdict
 
 file_folder, loc_folder, text_folder, ner_folder, graph_folder, pe_folder = get_folder_names().values()
 
 def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 	'''
-		Need to specify data if not start_from = 1
+		Specify file_name if start_from=1
+		Else input file_name and data.
 		
+		Stg1:
+		Step 1. Filter by Location
+		Step 2. Twarc Hydration
+		Step 3. Filter by English
+		Step 4. NER tagging
+		Step 5. Get graphs
 	'''
 
 	from twarc import Twarc
-	from pipeline_config import filter_by_loc, filter_en, filter_by_au
+	from pipeline_config import filter_by_loc, filter_by_au, filter_en, get_full_text
 	from graph_building import get_knowledge_graph
 	from preprocessing import texts2NER
 	
@@ -65,10 +77,11 @@ def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 		return tweets
 
 	def step3(tweets, text_folder, file_name):
-		#Step 3. Filter by English
+		#Step 3. Filter by English and get full text
 		print("\n\nStart filter by English and get full_text.")
 		full_texts = []
-		for tweet in tweets: full_texts.append(filter_en(tweet))
+		for tweet in tweets:
+			if filter_en(tweet): full_texts.append((tweet['id'], get_full_text(tweet))) #remove filter_en if not needed
 		tweet_number = len(full_texts)
 
 		json.dump(full_texts, open(p.join(text_folder, file_name), "w"))
@@ -108,28 +121,27 @@ def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 
 		return graph
 
-	if start_from<2 and end_at>0:
-		tweet_ids = step1(file_folder, file_name, loc_folder)
+	if start_from<2 and end_at>0: tweet_ids = step1(file_folder, file_name, loc_folder) #filter by location, get tweet_ids
 	
 	file_name = file_name.split("_")[-1]
 
 	if start_from<3 and end_at>1:
-		if start_from==2: tweet_ids=data
+		if start_from==2: tweet_ids=data #Hydrate tweet_ids, get tweets
 		tweets = step2(tweet_ids)
 		del tweet_ids #delete no longer needed variables
 
 	if start_from<4 and end_at>2:
 		if start_from==3: tweets = data
-		full_texts = step3(tweets, text_folder, file_name)
+		full_texts = step3(tweets, text_folder, file_name) #filter by English, get tweets
 		del tweets #delete no longer needed variables
 	
 	if start_from<5 and end_at>3:
 		if start_from==4: full_texts = data
-		NERs = step4(full_texts, ner_folder, file_name, tweets_per_round)
+		NERs = step4(full_texts, ner_folder, file_name, tweets_per_round) #NER tagging, get NER entities
 		del full_texts
 
 	if start_from<6 and end_at>4:
-		if start_from==5: NERs = data
+		if start_from==5: NERs = data #graph building, get graphs
 		graph = step5(NERs, graph_folder, file_name, file_name[:-5])
 		del NERs
 
@@ -144,29 +156,40 @@ def stg2(X, Y, days_per_block, minimum):
 		days_per_block: int, days per time block
 		minimum: float, minimum entity significance to be considered as peaking entities
 
+		Stg2:
+		Step 6. Get peaking entities
+		Step 7. Trace back to texts.
+		Step 8. Get nouns and noun-phrases.
+		Step 9. KeyGraph.
+		Step 10. WordCloud.
+
 	'''
 	from time_series_analysis import get_peaking_entities, divide2blocks
-	from topic_summarization import e2docs
+	from topic_summarization import e2docs, texts2docs
 
 	def get_NERi_dicts(graphs):
 		out={}
-		for graph in graphs: NERi_dicts[graph["timeblock"]]=graph["word_index_dict"]
+		for graph in graphs: out[graph["timeblock"]]=graph["word_index_dict"]
 		return out
 
 	graphs = [json.load(open(p.join(graph_folder, file))) for file in sorted(listdir(graph_folder))]
-	PEs =  get_peaking_entities(divide2blocks(graphs, days_per_block) if days_per_block>1 else graphs, X, Y, days_per_block, minimum, pe_folder, save)
+	if days_per_block>1: divide2blocks(graphs, days_per_block)
+	PEs =  get_peaking_entities(graphs, X, Y, minimum, pe_folder, True)
 	
 	NERi_dicts, out = get_NERi_dicts(graphs), defaultdict()
 	
 	for timeblock in PEs:
-		for PE in PEs[timeblock]: full_texts = e2docs(PE, timeblock, NERi_dicts[timeblock])
+		full_texts = []
+		for PE in PEs[timeblock]: full_texts += e2docs(PE, timeblock, NERi_dicts[timeblock])
+		texts2docs([text for _,text in full_texts], timeblock)
 
 
 if __name__ == '__main__':
-	from sys import argv
-	if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")
-	# main(argv[1])
+	stg2(5, 1, 1, minimum=0.01)
+	# from sys import argv
+	# if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")
+	# # main(argv[1])
 
-	data = json.load(open(p.join(argv[1], argv[2])))
+	# data = json.load(open(p.join(argv[1], argv[2])))
 	
-	main(argv[2], data, start_from=4)
+	# main(argv[2], data, start_from=4)

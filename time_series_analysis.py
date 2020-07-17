@@ -13,7 +13,7 @@ import pandas as pd
 
 from pprint import pprint
 from os import listdir, path as p
-from preprocessing import texts2NER, NER2texts
+from preprocessing import texts2NER
 from graph_building import get_knowledge_graph
 from pipeline_config import get_folder_names
 from collections import defaultdict

@@ -57,10 +57,10 @@ filter_entity_dict={
 	}
 
 folder_names={
-	1:"1.Get Tweet Ids",
-	2:"2.Filter by Location",
-	3:"3.Get Tweets",
-	4:"4.Get NER Entities",
+	1:"1.Raw",
+	2:"2.Tweet Ids",
+	3:"3.Tweet Texts",
+	4:"4.NERs",
 	5:"5.Graphs",
 	6:"6.Peaking Entities"
 }
@@ -105,14 +105,7 @@ def filter_en(tweet):
 		return ID, full_text
 		
 	'''
-	if tweet['lang']=='en': 
-		if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
-		else:
-			try:
-				out = (tweet['id'], tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"])
-			except Exception: out = (tweet['id'], tweet['full_text'])
-	else: out = (None, None)
-	return out
+	return tweet['lang']=='en'
 
 def get_full_text(tweet):
 	'''
@@ -120,12 +113,11 @@ def get_full_text(tweet):
 		Same as filter_en except not looking at tweet['lang']
 
 	'''
-	if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): out = (tweet['id'], tweet['full_text'])
+	if not tweet.get("retweeted_status") or tweet.get("retweeted_status").get("retweeted"): return  tweet['full_text']
 	else:
 		try:
-			out = (tweet['id'], tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"])
-		except Exception: out = (tweet['id'], tweet['full_text'])
-	return out
+			return tweet['full_text'][:tweet['full_text'].find("@"+tweet['entities']['user_mentions'][0]['screen_name'])]+tweet["retweeted_status"]["full_text"]
+		except Exception: return tweet['full_text']
 
 def filter_by_city(tweet_meta, filter_keys):
 	for filter_key in filter_keys:

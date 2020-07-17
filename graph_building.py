@@ -22,9 +22,10 @@ from os import listdir, path as p
 from utils import alter_token
 from pprint import pprint
 from collections import defaultdict
-from preprocessing import texts2NER, NER2texts
+from preprocessing import texts2NER
 from pipeline_config import get_folder_names, filter_entity
 
+#temp copy cat of that in preprocessing.py
 def replace_all(NERs):
 	replacement_dict = filter_entity()['replacement']
 	
