@@ -62,7 +62,10 @@ folder_names={
 	3:"3.Tweet Texts",
 	4:"4.NERs",
 	5:"5.Graphs",
-	6:"6.Peaking Entities"
+	6:"6.Peaking Entities",
+	7:"7.N&NPs",
+	8:"8.KeyGraph",
+	9:"9.Word Clouds"
 }
 
 def get_folder_names():

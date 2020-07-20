@@ -23,7 +23,7 @@ from utils import alter_token
 from pprint import pprint
 from collections import defaultdict
 from preprocessing import texts2NER
-from pipeline_config import get_folder_names, filter_entity
+from pipeline_config import filter_entity
 
 #temp copy cat of that in preprocessing.py
 def replace_all(NERs):
@@ -141,7 +141,7 @@ def get_edge_weights_all_docs(docs):
 	print("\tDone.")
 	return out
 
-def get_knowledge_graph(date, texts=None, NERs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
+def get_knowledge_graph(date, texts=None, NERs=None, docs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
 	'''
 		Get knowledge graph.
 		
@@ -157,6 +157,8 @@ def get_knowledge_graph(date, texts=None, NERs=None, e_only=False, edge_only=Fal
 		TESTED.
 
 	'''
+	assert texts or NERs or docs
+
 	if texts and not NERs:
 		NERs = texts2NER(texts, tweets_per_round=tweets_per_round, include=True)
 		if save_NER: json.dump(NERs, open(save_NER, "w"))
@@ -179,6 +181,8 @@ def main(save_NER=False):
 		get_knowledge_graph for all files under directory.
 	
 	'''
+	from pipeline_config import get_folder_names
+
 	from_directory, to_directory, NER_directory= get_folder_names()[3], get_folder_names()[5], get_folder_names()[4]
 
 	bti = len(listdir(NER_directory))

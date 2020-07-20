@@ -23,14 +23,14 @@ from os import listdir, path as p
 from os import environ as e
 from collections import defaultdict
 
-file_folder, loc_folder, text_folder, ner_folder, graph_folder, pe_folder = get_folder_names().values()
+file_folder, loc_folder, text_folder, ner_folder, graph_folder, pe_folder, nnps_folder, kgraph_folder, wc_folder = get_folder_names().values()
 
 def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
-	'''
+	'''k
 		Specify file_name if start_from=1
 		Else input file_name and data.
 		
-		Stg1:
+		Stg1 - single file/date level run
 		Step 1. Filter by Location
 		Step 2. Twarc Hydration
 		Step 3. Filter by English
@@ -156,7 +156,7 @@ def stg2(X, Y, days_per_block, minimum):
 		days_per_block: int, days per time block
 		minimum: float, minimum entity significance to be considered as peaking entities
 
-		Stg2:
+		Stg2 - folder-level run
 		Step 6. Get peaking entities
 		Step 7. Trace back to texts.
 		Step 8. Get nouns and noun-phrases.
@@ -165,23 +165,43 @@ def stg2(X, Y, days_per_block, minimum):
 
 	'''
 	from time_series_analysis import get_peaking_entities, divide2blocks
-	from topic_summarization import e2docs, texts2docs
+	from topic_summarization import e2docs, texts2docs, get_key_graph
 
 	def get_NERi_dicts(graphs):
 		out={}
 		for graph in graphs: out[graph["timeblock"]]=graph["word_index_dict"]
 		return out
 
+	#step 6 - get peaking entities
+	print("\n\nStart getting peaking entities...")
 	graphs = [json.load(open(p.join(graph_folder, file))) for file in sorted(listdir(graph_folder))]
-	if days_per_block>1: divide2blocks(graphs, days_per_block)
+	if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
 	PEs =  get_peaking_entities(graphs, X, Y, minimum, pe_folder, True)
-	
+	print("\tDone.")
+
+	#step 7&8&9&10
+	print("\nStart tracing back to texts, and getting nouns and noun-phrases...")
 	NERi_dicts, out = get_NERi_dicts(graphs), defaultdict()
 	
-	for timeblock in PEs:
+	for timeblock in PEs: #timeblock-level processing
 		full_texts = []
-		for PE in PEs[timeblock]: full_texts += e2docs(PE, timeblock, NERi_dicts[timeblock])
-		texts2docs([text for _,text in full_texts], timeblock)
+		#Step 7 - Tracing back to texts
+		for PE in PEs[timeblock]: full_texts += e2docs(PE, text_folder, timeblock, NERi_dicts[timeblock])
+
+		#Step 8 - Getting N&NPs
+		print("\nGetting Nouns and Noun-phrases for %s..."%timeblock)
+		texts2docs([text for _,text in full_texts], timeblock, nnps_folder)
+		print("\tDone.")
+		#Step 9 - Creating KeyGraph
+		print("\nGetting KeyGraphs for %s..."%timeblock)
+		get_key_graph(timeblock, nnps_folder=nnps_folder, save_folder=kgraph_folder)
+		print("\tDone.")
+		#Step 10 - 
+
+
+	print("\nDone.")
+
+
 
 
 if __name__ == '__main__':

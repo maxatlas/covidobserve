@@ -15,7 +15,6 @@ from pprint import pprint
 from os import listdir, path as p
 from preprocessing import texts2NER
 from graph_building import get_knowledge_graph
-from pipeline_config import get_folder_names
 from collections import defaultdict
 
 def divide2blocks(graphs, days_per_block):
@@ -135,6 +134,9 @@ def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=True):
 		days_per_block: if =7, 7 days to make up a time block.
 
 	'''
+
+	from pipeline_config import get_folder_names
+
 	from_folder, to_folder = get_folder_names()[5], get_folder_names()[6]
 	files = sorted(listdir(from_folder))
 	graphs = [json.load(open(p.join(from_folder, file))) for file in sorted(listdir(from_folder))]
