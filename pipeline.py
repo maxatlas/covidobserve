@@ -7,11 +7,11 @@
 		Step 4. NER tagging
 		Step 5. Get graphs
 	Stg2:
-		Step 6. Get peaking entities
-		Step 7. Trace back to texts.
-		Step 8. Get nouns and noun-phrases.
-		Step 9. KeyGraph.
-		Step 10. WordCloud.
+		Step 1. Get peaking entities
+		Step 2. Trace back to texts.
+		Step 3. Get nouns and noun-phrases.
+		Step 4. KeyGraph.
+		Step 5. WordCloud.
 
 '''
 import json
