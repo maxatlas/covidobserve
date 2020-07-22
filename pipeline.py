@@ -117,7 +117,7 @@ def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 		print("\tStep5 - Graph generation takes %i hours %f seconds." %((end-start)//3600, (end-start)%3600)) #report process taken how long.
 
 		json.dump(graph, open(p.join(graph_folder, file_name), "w"))
-		print("NERs saved at %s." %(graph_folder))
+		print("Graphs saved at %s." %(graph_folder))
 
 		return graph
 
@@ -145,11 +145,11 @@ def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 		graph = step5(NERs, graph_folder, file_name, file_name[:-5])
 		del NERs
 
-	print("\nPipeline compelete for %s" %file_name)
+	print("\nStg1 pipeline compelete for %s" %file_name)
 
 
 
-def stg2(X, Y, days_per_block, minimum):
+def stg2(X, Y, days_per_block, minimum, start_from=0, stop_at=10):
 	'''
 		X: int, rolling window size
 		Y: int, # of std away from mean to be identified as peaking entities
@@ -157,11 +157,11 @@ def stg2(X, Y, days_per_block, minimum):
 		minimum: float, minimum entity significance to be considered as peaking entities
 
 		Stg2 - folder-level run
-		Step 6. Get peaking entities
-		Step 7. Trace back to texts.
-		Step 8. Get nouns and noun-phrases.
-		Step 9. KeyGraph.
-		Step 10. WordCloud.
+		Step 1. Get peaking entities
+		Step 2. Trace back to texts.
+		Step 3. Get nouns and noun-phrases.
+		Step 4. KeyGraph.
+		Step 5. WordCloud.
 
 	'''
 	from time_series_analysis import get_peaking_entities, divide2blocks
@@ -172,44 +172,54 @@ def stg2(X, Y, days_per_block, minimum):
 		for graph in graphs: out[graph["timeblock"]]=graph["word_index_dict"]
 		return out
 
-	#step 6 - get peaking entities
-	print("\n\nStart getting peaking entities...")
-	graphs = [json.load(open(p.join(graph_folder, file))) for file in sorted(listdir(graph_folder))]
-	if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
-	PEs =  get_peaking_entities(graphs, X, Y, minimum, pe_folder, True)
-	print("\tDone.")
+	def step1(graph_folder):
+		#step 6 - get peaking entities
+		print("\n\nStart getting peaking entities...")
+		graphs = [json.load(open(p.join(graph_folder, file))) for file in sorted(listdir(graph_folder))]
+		if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
+		PEs =  get_peaking_entities(graphs, X, Y, minimum, pe_folder, True)
+		print("\tDone.")
+		return graphs, PEs
 
-	#step 7&8&9&10
-	print("\nStart tracing back to texts, and getting nouns and noun-phrases...")
-	NERi_dicts, out = get_NERi_dicts(graphs), defaultdict()
-	
-	for timeblock in PEs: #timeblock-level processing
-		full_texts = []
+	def step2(timeblock, text_folder, NERi_dicts):
 		#Step 7 - Tracing back to texts
+		print("\nStart tracing back to full_texts for %s"%timeblock)
+		full_texts = []
 		for PE in PEs[timeblock]: full_texts += e2docs(PE, text_folder, timeblock, NERi_dicts[timeblock])
+		print("Done.")
+		return full_texts
 
+	def step3(timeblock, full_texts):
 		#Step 8 - Getting N&NPs
 		print("\nGetting Nouns and Noun-phrases for %s..."%timeblock)
 		texts2docs([text for _,text in full_texts], timeblock, nnps_folder)
 		print("\tDone.")
+
+	def step4(timeblock, nnps_folder, kgraph_folder):
 		#Step 9 - Creating KeyGraph
 		print("\nGetting KeyGraphs for %s..."%timeblock)
 		get_key_graph(timeblock, nnps_folder=nnps_folder, save_folder=kgraph_folder)
 		print("\tDone.")
-		#Step 10 - 
 
+	graphs, PEs = step1(graph_folder)
 
-	print("\nDone.")
+	NERi_dicts, out = get_NERi_dicts(graphs), defaultdict()
+	
+	for timeblock in PEs: #timeblock-level processing
+		full_texts = step2(timeblock, text_folder, NERi_dicts)
+		docs = step3(timeblock, full_texts)
+		step4(timeblock, nnps_folder, kgraph_folder)
+		
+		del full_texts, docs
+
+	print("Stg2 pipeline complete for timeblock size %i." %days_per_block)
 
 
 
 
 if __name__ == '__main__':
-	stg2(5, 1, 1, minimum=0.01)
-	# from sys import argv
-	# if len(argv)<2: print("Please input file name. Change folder names from pipeline_config.py if need to.")
-	# # main(argv[1])
+	from sys import argv
+	data = json.load(open(p.join(get_folder_names()[3], argv[1])))
+	stg1(argv[1], data, start_from=4)
 
-	# data = json.load(open(p.join(argv[1], argv[2])))
-	
-	# main(argv[2], data, start_from=4)
+	# stg2(5, 1, days_per_block=1, minimum=0.01)

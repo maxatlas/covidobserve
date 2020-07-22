@@ -38,7 +38,6 @@ def divide2blocks(graphs, days_per_block):
 	out, block=[], init_block()
 	for i, graph in enumerate(graphs):
 		if (i+1)%days_per_block==1 or days_per_block==1: block=init_block()
-		print(i, type(block["e_sigs_mean"]))
 		block['e_sigs_mean']=block['e_sigs_mean'].add(pd.Series(graph['e_sigs_mean'],dtype="float64"), fill_value=0)
 		block['edge_weights']=block['edge_weights'].add(pd.Series(graph['edge_weights'],dtype="float64"), fill_value=0)
 		for word in graph["word_index_dict"]: block["word_index_dict"][word]+=(np.array(graph["word_index_dict"][word])+block["docs_length"]).tolist()
@@ -46,8 +45,8 @@ def divide2blocks(graphs, days_per_block):
 		block["timeblock"]+=graph["timeblock"]+","
 
 		if (i+1)%days_per_block==0:
-			block["e_sigs_mean"] = (block["e_sigs_mean"]/days_per_block).to_dict() #normalize
-			block["edge_weights"] = (block["edge_weights"]/days_per_block).to_dict() #normalize
+			block["e_sigs_mean"] = (block["e_sigs_mean"]).to_dict() #normalize (block["e_sigs_mean"]/days_per_block)
+			block["edge_weights"] = (block["edge_weights"]).to_dict() #normalize (block["edge_weights"]/days_per_block)
 			block["timeblock"]=block["timeblock"][:-1]
 			out.append(block)
 
@@ -145,5 +144,4 @@ def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=True):
 	return get_peaking_entities(graphs, X, Y, minimum, to_folder, save)
 
 if __name__ == '__main__':
-	out = main(save=False)
-	pprint(out)
+	out = main(save=True, days_per_block=1, minimum=0.01)

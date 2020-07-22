@@ -5,20 +5,70 @@ import json
 
 from os import listdir, path as p
 from pprint import pprint
+from pipeline_config import filter_entity
+
+def replace_name(token):
+	'''
+	e > e.text
+
+	example: 
+	
+	realDonaldTrump > Donald Trump
+	realdonaldtrump > realdonaldtrump
+	TESTED
+	'''
+	def is_person(token): return token.startswith("@")
+
+	if is_person(token):
+		out = re.findall("[A-Z][a-z]+", token)# *: Scott Morrison P M; +: Scott Morrison
+		out = " ".join(out) if out else token
+
+		return out
+	return token
+
+def replace_by_dict(token):
+	replacement_dict = filter_entity()['replacement']
+	if token in replacement_dict: token = replacement_dict[token]
+	return token
+
+
+def alter_text(text):
+	'''
+	e.g.
+	input: "It's #ourpleasure to have invited @person1 and @person2!"
+	output: "It's #ourpleasure, to have invited @person1, and @person2!"
+
+	Needed process for accurate Nouns & Noun Phrases extraction with TextBlob
+
+	TESTED.
+	'''
+	hashtags = list(re.finditer("#([a-zA-Z0-9_])+", text))
+	people = list(re.finditer("@([a-zA-Z0-9_])+", text))
+	out = text
+	for e in set(hashtags+people):
+		print([e.group(), text[e.span()[1]].isspace()]) 
+		if text[e.span()[1]].isspace(): out = re.sub(e.group(), e.group()+",", out)
+	return out
 
 def alter_token(token):
-	token = re.sub("[\u00a0-\uffff]", "", token) #remove emojis
-	token = re.sub("&amp", "&", token) #alter twitter format &
+	def remove_non_alpha_both_ends(token):
+		if token[-1].isalpha() and token[0].isalpha(): return token
+		elif not token[-1].isalpha(): return remove_non_alpha_both_ends(token[:-1])
+		else: return remove_non_alpha_both_ends(token[1:])
+
+	token = re.sub("[\u00a0-\uffff]", "", token) #remove_emojis
+	token = re.sub("&amp;", "&", token) #replace
+	token = re.sub("&gt;", ">", token) #alter twitter format >
+	token = re.sub("&lt;", "<", token) #alter twitter format <
+	token = re.sub("http[:/.\w]+", "", token) #remove web address
 
 	token = token[3:] if token.startswith("RT ") else token
-	token = token[1:] if token.startswith("#") else token
-	token = token[:-1] if token.endswith(" ") else token
 	token = token[:-1] if token.endswith("&") else token
-	token = token[:-1] if token.endswith(" ") else token
 	token = token[:-2] if token.endswith("'s") else token
 
-	return token
-		
+	return remove_non_alpha_both_ends(token)
+
+
 def get_tweet_by_id(tweet_id):
 	from os import environ as e
 	from twarc import Twarc
@@ -36,10 +86,6 @@ def get_tweet_by_id(tweet_id):
 
 	return out
 
-def is_person(e):
-	qualified_types = ["PERSON", "FAC"]
-	return e.type in qualified_types 
-
 def get_name(e):
 	'''
 		example:
@@ -47,6 +93,10 @@ def get_name(e):
 		realDonaldTrump -> Donald Trump
 		realdonaldtrump -> realdonaldtrump
 	'''
+	def is_person(e):
+		qualified_types = ["PERSON", "FAC"]
+		return e.type in qualified_types 
+
 	if is_person(e):
 		out = re.findall("[A-Z][a-z]+", e.text)# *: Scott Morrison P M; +: Scott Morrison
 		out = " ".join(out) if out else e.text
