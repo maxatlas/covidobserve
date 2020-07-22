@@ -61,8 +61,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 
 	while i<len(texts): 
 		print("\tRound %i"%page_number)
-		text = delim.join(texts[i:tweets_per_round*page_number])
-		text = alter_text(text)
+		text = alter_text(delim.join(texts[i:tweets_per_round*page_number]))
 
 		start=time.time()
 		NERs = get_NERs(text)

@@ -33,6 +33,14 @@ def replace_by_dict(token):
 
 
 def alter_text(text):
+	text = re.sub("&amp;", "&", text) #replace
+	text = re.sub("&gt;", ">", text) #alter twitter format >
+	text = re.sub("&lt;", "<", text) #alter twitter format <
+
+	return text
+
+def alter_topic_person(text):
+
 	'''
 	e.g.
 	input: "It's #ourpleasure to have invited @person1 and @person2!"
@@ -42,10 +50,7 @@ def alter_text(text):
 
 	TESTED.
 	'''
-	text = re.sub("&amp;", "&", text) #replace
-	text = re.sub("&gt;", ">", text) #alter twitter format >
-	text = re.sub("&lt;", "<", text) #alter twitter format <
-
+	
 	hashtags = list(re.finditer("#([a-zA-Z0-9_])+", text))
 	people = list(re.finditer("@([a-zA-Z0-9_])+", text))
 	out = text
@@ -64,7 +69,6 @@ def alter_token(token):
 	token = re.sub("http[:/.\w]+", "", token) #remove web address
 
 	token = token[3:] if token.startswith("RT ") else token
-	token = token[:-1] if token.endswith("&") else token
 	token = token[:-2] if token.endswith("'s") else token
 
 	return remove_non_alpha_both_ends(token)

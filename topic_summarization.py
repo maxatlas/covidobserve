@@ -16,7 +16,7 @@ from collections import defaultdict
 from pprint import pprint
 from os import listdir, chdir, getcwd, path as p
 from graph_building import get_knowledge_graph
-from utils import alter_token, alter_text, replace_by_dict, replace_name
+from utils import alter_token, alter_text, alter_topic_person, replace_by_dict, replace_name
 from textblob import TextBlob
 
 def e2docs(entity_text, fulltext_folder, timeblock, word_index_dict):
@@ -36,16 +36,16 @@ def e2docs(entity_text, fulltext_folder, timeblock, word_index_dict):
 	return [full_texts[i] for i in word_index_dict[entity_text]]
 
 
-def remove_freq_tokens(docs):
+def get_tfidf_dict(docs):
 	'''
 		remove tokens with high document frequency (DF)
 	'''
-	def get_freq_tokens(docs):
-		token_freq = defaultdict(int)
-		for doc in docs: 
-			for token in set(doc): token_freq[token]+=1/len(docs)
-		pprint(token_freq)
-		return token_freq
+	out = defaultdict(int)
+	
+	for doc in docs: 
+		for token in set(doc): token_freq[token]+=1/len(docs)
+	pprint(token_freq)
+	return token_freq
 
 	out, freq_dict = [], get_freq_tokens(docs)
 	for doc in docs:
@@ -73,7 +73,7 @@ def texts2docs(texts, timeblock, to_folder):
 	'''
 	def subrun(command): return subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE).communicate()[0]
 	def preprocess(texts): 
-		texts = [re.sub("RT ", "", alter_text(text)) for text in texts]
+		texts = [re.sub("RT ", "", alter_topic_person(alter_text(text))) for text in texts]
 		texts = [" ".join([replace_by_dict(alter_token(replace_name(token))) for token in text.split(" ")])+"\n" for text in texts]
 		return texts
 

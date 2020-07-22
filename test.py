@@ -1,9 +1,23 @@
-from utils import ner_sent, get_loc
+from utils import ner_sent, get_loc, alter_text, alter_token
 from pprint import pprint
-from preprocess_config import filter_by_au, filter_by_city, filter_by_loc, filter_en
-
+from pipeline_config import filter_by_au, filter_by_city, filter_by_loc, filter_en
+from graph_building import get_edge_weights_all_docs
 from collections import defaultdict
 import time, json
+
+def test_alter_token():
+	token="America🇺🇸"
+	# token="H&amp;M"
+	return alter_token(token)
+
+def test_alter_text():
+	text="It's #ourpleasure to have invited @realDonaldTrump and @NaciDanison!H&amp;M #this"
+	return alter_text(text)
+
+def test_get_edge_weights():
+	docs=[["1", "2"], ["2", "3", "4"], ["5", "1"]]
+	out = get_edge_weights_all_docs(docs)
+	print(out)
 
 def test_e2docs():
 	from topic_summarization import e2docs
@@ -127,23 +141,10 @@ def get_text_loc_pairs(file_path, depths=[], data=None, to_folder="samples"):
 	print("File saved at samples.")
 
 def show_text_loc_pairs(pair_file_path, size=150):
-	from 
 	data = json.load(open(pair_file_path))
 	for depth in data:
 		print("Depth=%i"%depth)
 		key_indexes = len(data[depth])
 
 if __name__ == '__main__':
-	tweets = ["So, if you\u2019re an Australian working in New Zealand the NZ government will assist you and your family during this crisis, but if you\u2019re a New Zealander working in Australia Scott Morrison says fvck you and your family.", "Researchers from China and Australia have published a paper on @Nature discovering multiple lineages of pangolin coronavirus and their similarity to SARS-CoV-2, which suggests pangolins should be considered as possible hosts in the emergence of the novel #coronavirus. https://t.co/2kDfeG9mWS","So, if you\u2019re an Australian working in New Zealand the NZ government will assist you and your family during this crisis, but if you\u2019re a New Zealander working in Australia Scott Morrison says fvck you and your family.", "Researchers from China and Australia have published a paper on @Nature discovering multiple lineages of pangolin coronavirus and their similarity to SARS-CoV-2, which suggests pangolins should be considered as possible hosts in the emergence of the novel #coronavirus. https://t.co/2kDfeG9mWS",
-	"So, if you\u2019re an Australian working in New Zealand the NZ government will assist you and your family during this crisis, but if you\u2019re a New Zealander working in Australia Scott Morrison says fvck you and your family.", "Researchers from China and Australia have published a paper on @Nature discovering multiple lineages of pangolin coronavirus and their similarity to SARS-CoV-2, which suggests pangolins should be considered as possible hosts in the emergence of the novel #coronavirus. https://t.co/2kDfeG9mWS"]
-
-	show_text_loc_pairs("samples/loc-text_pair_locdepths_2020-03-30.json")
-
-	# compare_filter_results("1.Get Tweet Ids/geo_2020-03-30.json", False)
-	# compare_stanza_gpu_cpu(tweets)
-	# get_text_loc_pairs("samples/samples_geo.json", [1,2,3,4])
-	# get_text_loc_pairs("1.Get Tweet Ids/geo_2020-03-30.json", [1,2,3,4], data="samples/full_text_locdepths_2020-03-30.json")
-	
-	# sent = [wordpunct_tokenize(sentence) for tweet in tweets for sentence in sent_tokenize(tweet)]
-
-	# pprint(test_ner(tweets))
+	print(test_alter_text())
