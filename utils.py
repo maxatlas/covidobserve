@@ -7,7 +7,8 @@ from os import listdir, path as p
 from pprint import pprint
 from pipeline_config import filter_entity
 
-def replace_name(token):
+
+def replace_name(e):
 	'''
 	e > e.text
 
@@ -17,14 +18,19 @@ def replace_name(token):
 	realdonaldtrump > realdonaldtrump
 	TESTED
 	'''
-	def is_person(token): return token.startswith("@")
-
-	if is_person(token):
-		out = re.findall("[A-Z][a-z]+", token)# *: Scott Morrison P M; +: Scott Morrison
-		out = " ".join(out) if out else token
-
+	def replace_name(text):
+		out = re.findall("[A-Z][a-z]+", text)# *: Scott Morrison P M; +: Scott Morrison
+		out = " ".join(out) if out else text
 		return out
-	return token
+
+	qualified_types = ["PERSON", "FAC"] #for span type input
+
+	if isinstance(e, str):
+		if e.startswith("@"): return replace_name(e)
+		return e
+	else:
+		if e.type in qualified_types: return replace_name(e.text)
+		return e.text
 
 def replace_by_dict(token):
 	replacement_dict = filter_entity()['replacement']
@@ -50,13 +56,13 @@ def alter_topic_person(text):
 
 	TESTED.
 	'''
-	
+
 	hashtags = list(re.finditer("#([a-zA-Z0-9_])+", text))
 	people = list(re.finditer("@([a-zA-Z0-9_])+", text))
 	out = text
 	for e in set(hashtags+people):
-		if text[e.span()[1]].isspace(): out = re.sub(e.group(), e.group()+",", out)
-	
+		if e.span()[1]<len(text):
+			if text[e.span()[1]].isspace(): out = re.sub(e.group(), e.group()+",", out)
 	return out
 
 def alter_token(token):
@@ -91,23 +97,6 @@ def get_tweet_by_id(tweet_id):
 
 	return out
 
-def get_name(e):
-	'''
-		example:
-		
-		@realDonaldTrump -> Donald Trump
-		@realdonaldtrump -> @realdonaldtrump
-	'''
-	def is_person(e):
-		qualified_types = ["PERSON", "FAC"]
-		return e.type in qualified_types 
-
-	if is_person(e):
-		out = re.findall("[A-Z][a-z]+", e.text)# *: Scott Morrison P M; +: Scott Morrison
-		out = " ".join(out) if out else e.text
-
-		return out
-	return e.text
 
 def ner_sent(sent, report=False):
 	if report: print("Start sending NER...")
