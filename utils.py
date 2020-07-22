@@ -52,7 +52,7 @@ def alter_text(text):
 
 def alter_token(token):
 	def remove_non_alpha_both_ends(token):
-		if token[-1].isalpha() and token[0].isalpha(): return token
+		if not token or (token[-1].isalpha() and token[0].isalpha()): return token
 		elif not token[-1].isalpha(): return remove_non_alpha_both_ends(token[:-1])
 		else: return remove_non_alpha_both_ends(token[1:])
 
