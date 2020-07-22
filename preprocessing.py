@@ -8,7 +8,7 @@ import json
 import re
 
 from pprint import pprint
-from utils import get_name, alter_token
+from utils import get_name, alter_token, alter_text
 from pipeline_config import filter_entity
 
 filter_entity_dict=filter_entity()
@@ -62,6 +62,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 	while i<len(texts): 
 		print("\tRound %i"%page_number)
 		text = delim.join(texts[i:tweets_per_round*page_number])
+		text = alter_text(text)
 
 		start=time.time()
 		NERs = get_NERs(text)

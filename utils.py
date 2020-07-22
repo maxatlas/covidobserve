@@ -42,12 +42,16 @@ def alter_text(text):
 
 	TESTED.
 	'''
+	text = re.sub("&amp;", "&", text) #replace
+	text = re.sub("&gt;", ">", text) #alter twitter format >
+	text = re.sub("&lt;", "<", text) #alter twitter format <
+
 	hashtags = list(re.finditer("#([a-zA-Z0-9_])+", text))
 	people = list(re.finditer("@([a-zA-Z0-9_])+", text))
 	out = text
 	for e in set(hashtags+people):
-		print([e.group(), text[e.span()[1]].isspace()]) 
 		if text[e.span()[1]].isspace(): out = re.sub(e.group(), e.group()+",", out)
+	
 	return out
 
 def alter_token(token):
@@ -57,9 +61,6 @@ def alter_token(token):
 		else: return remove_non_alpha_both_ends(token[1:])
 
 	token = re.sub("[\u00a0-\uffff]", "", token) #remove_emojis
-	token = re.sub("&amp;", "&", token) #replace
-	token = re.sub("&gt;", ">", token) #alter twitter format >
-	token = re.sub("&lt;", "<", token) #alter twitter format <
 	token = re.sub("http[:/.\w]+", "", token) #remove web address
 
 	token = token[3:] if token.startswith("RT ") else token
@@ -90,8 +91,8 @@ def get_name(e):
 	'''
 		example:
 		
-		realDonaldTrump -> Donald Trump
-		realdonaldtrump -> realdonaldtrump
+		@realDonaldTrump -> Donald Trump
+		@realdonaldtrump -> @realdonaldtrump
 	'''
 	def is_person(e):
 		qualified_types = ["PERSON", "FAC"]
