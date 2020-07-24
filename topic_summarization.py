@@ -50,8 +50,7 @@ def graph2nx(graph):
 	G = nx.Graph()
 	nodes, edges = set(), []
 
-	for edge in graph["edge_weights"]: 
-		if "australia" not in edge and "coronavirus" not in edge: edges.append(tuple(json.loads(edge)))
+	for edge in graph["edge_weights"]: edges.append(tuple(json.loads(edge)))
 	for edge in edges: nodes = nodes.union(set(edge))
 	
 	G.add_nodes_from(nodes)
