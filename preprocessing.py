@@ -8,47 +8,19 @@ import json
 import re
 
 from pprint import pprint
-from utils import get_name, alter_token, alter_text
+from utils import replace_name, alter_token, alter_text
 from pipeline_config import filter_entity
 
 filter_entity_dict=filter_entity()
 
 delim, replacement, exclude_types, include_types = filter_entity_dict['delim'], filter_entity_dict['replacement'], filter_entity_dict['exclude_types'], filter_entity_dict["include_types"]
 
-def get_NER_list_index(NER_end_index, text):
-	return len(text[:NER_end_index].split(delim))-1
-
-def replace_all(NERs):
-	replacement_dict = filter_entity_dict['replacement']
-
-	def replace_name(e):
-		'''
-		e > e.text
-
-		example: 
-		
-		realDonaldTrump > Donald Trump
-		realdonaldtrump > realdonaldtrump
-		TESTED
-		'''
-		return get_name(e)
-
-	def replace_by_dict(token):
-		if token in replacement_dict: token = replacement_dict[token]
-		return token
-
-	for NER in NERs:
-		text = replace_by_dict(alter_token(replace_name(NER)))
-		if text:
-			yield {
-				"text":text,
-				"start_char": NER.start_char,
-				"end_char": NER.end_char,
-				"type":NER.type
-				}
-
-def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_round=500000):
+def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_round=20000):
 	'''
+		MAIN running file.
+		
+		NER tagging over tweet texts.
+		
 		texts: [text]
 		text: tweet full_text.
 
@@ -59,7 +31,7 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 	i, page_number, NER_list, i2add = 0,1,[], 0 #i2add: alter start_char, end_char by this much
 	texts_str = delim.join(texts)
 
-	while i<len(texts): 
+	while i<len(texts): #Process texts in rounds, since Stanza seems to take the least time when process less than 20000 tweets.
 		print("\tRound %i"%page_number)
 		text = alter_text(delim.join(texts[i:tweets_per_round*page_number]))
 
@@ -96,6 +68,47 @@ def texts2NER(texts, report=False, exclude=False, include=False, tweets_per_roun
 	print("\tDone with %i NER entities."%count)
 
 	return NER_list
+
+
+def get_NER_list_index(NER_end_index, text):
+	'''
+		Return index of the full_text the NER belongs to.
+		
+		NER_end_index: int.
+		text: the input of get_NERs
+
+		output: int.
+
+	'''
+	return len(text[:NER_end_index].split(delim))-1
+
+def replace_all(NERs):
+	'''
+		post processing of NERs
+		
+		replace_name: e.g. 
+					realDonaldTrump > Donald Trump, 
+					realdonaldtrump > realdonaldtrump
+		replace_by_dict: e.g. AU > Australia to compress entity space.
+		alter_token: e.g. Australia!! > Australia
+
+	'''
+	replacement_dict = filter_entity_dict['replacement']
+
+	def replace_by_dict(token):
+		if token in replacement_dict: token = replacement_dict[token]
+		return token
+
+	for NER in NERs:
+		text = replace_by_dict(alter_token(replace_name(NER)))
+		if text:
+			yield {
+				"text":text,
+				"start_char": NER.start_char,
+				"end_char": NER.end_char,
+				"type":NER.type
+				}
+
 
 def get_NERs(text):
 	pipe = stanza.Pipeline(lang='en', processors='tokenize,ner', use_gpu=True)

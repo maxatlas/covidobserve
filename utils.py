@@ -65,19 +65,24 @@ def alter_topic_person(text):
 			if text[e.span()[1]].isspace(): out = re.sub(e.group(), e.group()+",", out)
 	return out
 
-def alter_token(token):
+def alter_token(token, remove_char_both=True, remove_char_head=False):
 	def remove_char_both_ends(token):
 		if not token or ((token[-1].isalpha() or token[-1].isdigit()) and (token[0].isalpha() or token[0].isdigit())): return token
 		elif token and not (token[-1].isalpha() or token[-1].isdigit()): return remove_char_both_ends(token[:-1])
 		else: return remove_char_both_ends(token[1:])
+	def remove_char_head(token):
+		if not token or (token[0].isalpha() or token[0].isdigit()): return token
+		else: return remove_char_both_ends(token[1:])
 
 	token = re.sub("[\u00a0-\uffff]", "", token) #remove_emojis
 	token = re.sub("http[:/.\w]+", "", token) #remove web address
-	token = re.sub("^RT", "", token)
-	
+	token = re.sub("^RT ", "", token)
+
 	token = token[:-2] if token.endswith("'s") else token
 
-	return remove_char_both_ends(token)
+	if remove_char_both: return remove_char_both_ends(token)
+	if remove_char_head: return remove_char_head(token)
+	return token
 
 
 def get_tweet_by_id(tweet_id):

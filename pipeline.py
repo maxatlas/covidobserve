@@ -18,7 +18,7 @@ import json
 import time
 import stanza
 
-from pipeline_config import get_folder_names
+from pipeline_config import get_folder_names, filter_entity
 from os import listdir, path as p
 from os import environ as e
 from collections import defaultdict
@@ -121,6 +121,7 @@ def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 
 		return graph
 
+	print("\nStg1 pipeline begins for %s" %file_name)
 	if start_from<2 and end_at>0: tweet_ids = step1(file_folder, file_name, loc_folder) #filter by location, get tweet_ids
 	
 	file_name = file_name.split("_")[-1]
@@ -145,7 +146,7 @@ def stg1(file_name, data=None, start_from=1, end_at=10, tweets_per_round=20000):
 		graph = step5(NERs, graph_folder, file_name, file_name[:-5])
 		del NERs
 
-	print("\nStg1 pipeline compelete for %s" %file_name)
+	print("\nStg1 pipeline compeleted for %s" %file_name)
 
 
 
@@ -165,15 +166,29 @@ def stg2(X, Y, days_per_block, minimum, start_from=0, stop_at=10):
 
 	'''
 	from time_series_analysis import get_peaking_entities, divide2blocks
-	from topic_summarization import e2docs, texts2docs, get_key_graph
+	from topic_summarization import e2docs, get_key_graph, get_groups
+	from NNPextraction_ToPMine import texts2docs
 
 	def get_NERi_dicts(graphs):
+		'''
+			NERi as in, NER and index.
+			graphs: dict, {timeblock: graph}
+
+			return {NER: [index]} to help trace back to the full_text.
+		'''
 		out={}
 		for graph in graphs: out[graph["timeblock"]]=graph["word_index_dict"]
 		return out
 
+	def get_exclude(exclude=["Australia", "Coronavirus"]):
+		out, filter_dict = set(), filter_entity()
+		for key in filter_dict['replacement']:
+			if filter_dict['replacement'][key] in exclude: out.add(key.lower())
+		out.add("auspol") #very common, may disrupt community detection
+		return out
+		
 	def step1(graph_folder):
-		#step 6 - get peaking entities
+		#step 1 - get peaking entities
 		print("\n\nStart getting peaking entities...")
 		graphs = [json.load(open(p.join(graph_folder, file))) for file in sorted(listdir(graph_folder))]
 		if days_per_block>1: graphs = divide2blocks(graphs, days_per_block)
@@ -182,25 +197,38 @@ def stg2(X, Y, days_per_block, minimum, start_from=0, stop_at=10):
 		return graphs, PEs
 
 	def step2(timeblock, text_folder, NERi_dicts):
-		#Step 7 - Tracing back to texts
+
+		#Step 2 - Tracing back to texts
 		print("\nStart tracing back to full_texts for %s"%timeblock)
-		full_texts = []
-		for PE in PEs[timeblock]: full_texts += e2docs(PE, text_folder, timeblock, NERi_dicts[timeblock])
+		full_texts, exclude = [], get_exclude() #exclude peaking entities that are search terms - coronavirus, australia
+		for PE in PEs[timeblock]:
+			if PE.lower() not in exclude: full_texts += e2docs(PE, text_folder, timeblock, NERi_dicts[timeblock])
 		print("Done.")
 		return full_texts
 
 	def step3(timeblock, full_texts):
-		#Step 8 - Getting N&NPs
+		#Step 3 - Getting N&NPs
 		print("\nGetting Nouns and Noun-phrases for %s..."%timeblock)
-		texts2docs([text for _,text in full_texts], timeblock, nnps_folder)
+		docs = texts2docs([text for _,text in full_texts], timeblock, nnps_folder)
 		print("\tDone.")
+		return docs
 
-	def step4(timeblock, nnps_folder, kgraph_folder):
-		#Step 9 - Creating KeyGraph
+	def step4(timeblock, docs, kgraph_folder):
+		#Step 4 - Creating KeyGraph
 		print("\nGetting KeyGraphs for %s..."%timeblock)
-		get_key_graph(timeblock, nnps_folder=nnps_folder, save_folder=kgraph_folder)
+		kgraph = get_key_graph(timeblock, docs, save_folder=kgraph_folder)
 		print("\tDone.")
+		return kgraph
 
+	def step5(timeblock, graph, wc_folder):
+		#Step 5 - Form topical communities
+		print("\nForm topical  communities for %s..."%timeblock)
+		groups = get_groups(graph)
+		if wc_folder: json.dump(groups, open(p.join(wc_folder, "%s.json"%timeblock), "w"))
+		print("\tDone.")
+		return groups
+
+	print("\nStg1 pipeline begins for folder %s" %graph_folder)
 	graphs, PEs = step1(graph_folder)
 
 	NERi_dicts, out = get_NERi_dicts(graphs), defaultdict()
@@ -208,18 +236,16 @@ def stg2(X, Y, days_per_block, minimum, start_from=0, stop_at=10):
 	for timeblock in PEs: #timeblock-level processing
 		full_texts = step2(timeblock, text_folder, NERi_dicts)
 		docs = step3(timeblock, full_texts)
-		step4(timeblock, nnps_folder, kgraph_folder)
-		
-		del full_texts, docs
+		kgraph = step4(timeblock, docs, kgraph_folder)
+		step5(timeblock, kgraph, wc_folder)
+		del full_texts, docs, kgraph
 
-	print("Stg2 pipeline complete for timeblock size %i." %days_per_block)
-
-
+		print("Stg2 pipeline completed for timeblock size %i." %days_per_block)
 
 
 if __name__ == '__main__':
 	from sys import argv
-	data = json.load(open(p.join(get_folder_names()[3], argv[1])))
-	stg1(argv[1], data, start_from=4)
+	# data = json.load(open(p.join(get_folder_names()[3], argv[1])))
+	# stg1(argv[1], data, start_from=4)
 
-	# stg2(5, 1, days_per_block=1, minimum=0.01)
+	stg2(5, 1, days_per_block=1, minimum=0.01)

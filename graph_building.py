@@ -19,41 +19,51 @@ import numpy as np
 
 from pprint import pprint
 from os import listdir, path as p
-from utils import alter_token
+from utils import alter_token, replace_by_dict, replace_name
 from pprint import pprint
 from collections import defaultdict
 from preprocessing import texts2NER
-from pipeline_config import filter_entity
 
-#temp copy cat of that in preprocessing.py
-def replace_all(NERs):
-	replacement_dict = filter_entity()['replacement']
-	
-	def replace_name(e):
-		'''
-		e > e.text
 
-		example: 
+def get_knowledge_graph(date, texts=None, NERs=None, docs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=20000):
+	'''
+		MAIN running file.
 		
-		realDonaldTrump > Donald Trump
-		realdonaldtrump > realdonaldtrump
-		TESTED
-		'''
-		def is_person(e):
-			qualified_types = ["PERSON", "FAC"]
-			return e.get("type") in qualified_types 
+		Get knowledge graph.
+		
+		date: string. e.g. "2020-03-28"
+		texts: [full_text]
+		docs: [[NER]]
+		save_NER: file/filename
 
-		if is_person(e):
-			out = re.findall("[A-Z][a-z]+", e.get("text"))# *: Scott Morrison P M; +: Scott Morrison
-			out = " ".join(out) if out else e.get("text")
+		mean(entity size) over all docs.
+		edge weight over all docs.
+	
+		save_NER: file path+name
+		TESTED.
 
-			return out
-		return e.get("text")
+	'''
+	assert texts or NERs or docs
 
-	def replace_by_dict(token):
-		if token in replacement_dict: token = replacement_dict[token]
-		return token
+	if texts and not NERs:
+		NERs = texts2NER(texts, tweets_per_round=tweets_per_round, include=True)
+		if save_NER: json.dump(NERs, open(save_NER, "w"))
+		
+	if NERs or texts: docs = get_NER_text(NERs)
 
+	if e_only: return get_e_sig_mean(docs)
+	elif edge_only: return get_edge_weights_all_docs(docs)
+
+	else: return {
+				"e_sigs_mean": get_e_sigs_mean(docs).to_dict(),
+				"edge_weights": get_edge_weights_all_docs(docs).to_dict(),
+				"word_index_dict": get_NER_indexes(docs),
+				"docs_length":len(docs),
+				"timeblock":date,
+			}
+
+#temp copy cat of that in preprocessing.py for string object
+def replace_all(NERs):
 	for NER in NERs:
 		text = replace_by_dict(alter_token(replace_name(NER)))
 		if text:
@@ -136,50 +146,17 @@ def get_edge_weights_all_docs(docs):
 	print("\tStart getting edge weights...")
 	out = pd.Series([], dtype="float64")
 
-	for doc in docs: out.add(get_edge_weights_per_doc(get_e_sig(doc)), fill_value=0)
-	
+	for doc in docs: out = out.add(get_edge_weights_per_doc(get_e_sig(doc)), fill_value=0)
+
 	print("\tDone.")
 	return out
 
-def get_knowledge_graph(date, texts=None, NERs=None, docs=None, e_only=False, edge_only=False, save_NER=None, tweets_per_round=500000):
-	'''
-		Get knowledge graph.
-		
-		date: string. e.g. "2020-03-28"
-		texts: [full_text]
-		docs: [[NER]]
-		save_NER: file/filename
-
-		mean(entity size) over all docs.
-		edge weight over all docs.
-	
-		save_NER: file path+name
-		TESTED.
-
-	'''
-	assert texts or NERs or docs
-
-	if texts and not NERs:
-		NERs = texts2NER(texts, tweets_per_round=tweets_per_round, include=True)
-		if save_NER: json.dump(NERs, open(save_NER, "w"))
-		
-	if NERs or texts: docs = get_NER_text(NERs)
-
-	if e_only: return get_e_sig_mean(docs)
-	elif edge_only: return get_edge_weights_all_docs(docs)
-
-	else: return {
-				"e_sigs_mean": get_e_sigs_mean(docs).to_dict(),
-				"edge_weights": get_edge_weights_all_docs(docs).to_dict(),
-				"word_index_dict": get_NER_indexes(docs),
-				"docs_length":len(docs),
-				"timeblock":date,
-			}
 
 def main(save_NER=False):
 	'''
 		get_knowledge_graph for all files under directory.
-	
+		For testing or separate run.
+
 	'''
 	from pipeline_config import get_folder_names
 

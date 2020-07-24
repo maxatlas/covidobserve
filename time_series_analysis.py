@@ -19,6 +19,8 @@ from collections import defaultdict
 
 def divide2blocks(graphs, days_per_block):
 	'''
+		Turn the daily graphs into timeblocks of graphs.
+
 		e.g.
 		input: list, [graphs] (sorted by timeblocks) length=35, days_per_block=7
 		output: list, [block] length=35/7=5
@@ -54,6 +56,8 @@ def divide2blocks(graphs, days_per_block):
 
 def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 	'''
+		MAIN running file.
+
 		TESTED.
 		X: int, sliding window size
 		Y: int, # of std away from mean to be considered as peaking entities
@@ -69,7 +73,8 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 	def remove_trend(df):
 		'''
 			df: output of get_e_sigs()
-			Needs testing.
+			return a new df with trending entities (e.g. Australia or Coronavirus in certain timeblocks) removed.
+
 		'''
 		for col in df.columns:
 			to_remove = np.array([df[col].mean()]+df[col].to_list()[:-1])
@@ -106,6 +111,10 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 		df.transpose().to_csv(p.join(save_folder, "peaking_entities.csv"))
 
 	def get_pe(df):
+		'''
+			return {timeblock: [peaking entity]}
+		
+		'''
 		out = {}
 		for timeblock in df.columns:
 			entities = df[timeblock].loc[df[timeblock].values].index.to_list()
@@ -114,7 +123,7 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 
 	e_sigs = get_e_sigs(graphs).transpose()
 	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs.csv"))
-	e_sigs = remove_trend(e_sigs)
+	e_sigs = remove_trend(e_sigs) #remove trending entities
 	if save: e_sigs.transpose().to_csv(p.join(to_folder, "e_sigs_remove_trends.csv"))
 
 	e_sigs_rolling = e_sigs.rolling(X, min_periods=X//2, center=True)
@@ -131,6 +140,7 @@ def get_peaking_entities(graphs, X, Y, minimum, to_folder, save):
 def main(X=5, Y=1, days_per_block=1, minimum=0.001, save=True):
 	'''
 		days_per_block: if =7, 7 days to make up a time block.
+		For testing or separate run.
 
 	'''
 

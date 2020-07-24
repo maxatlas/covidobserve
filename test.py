@@ -1,4 +1,4 @@
-from utils import ner_sent, get_loc, alter_text, alter_token
+from utils import ner_sent, get_loc, alter_text, alter_token, alter_topic_person
 from pprint import pprint
 from pipeline_config import filter_by_au, filter_by_city, filter_by_loc, filter_en
 from graph_building import get_edge_weights_all_docs
@@ -6,13 +6,14 @@ from collections import defaultdict
 import time, json
 
 def test_alter_token():
-	token="America🇺🇸"
+	# token="🇺🇸America🇺🇸"
 	# token="H&amp;M"
+	token="??G20!!"
 	return alter_token(token)
 
 def test_alter_text():
-	text="It's #ourpleasure to have invited @realDonaldTrump and @NaciDanison!H&amp;M #this"
-	return alter_text(text)
+	text="We Take the Dead From Morning Till Night - The New York Times      Heartbreaking and avoidable. Australia learn from this @GladysB @DanielAndrewsMP Scott Morrison  \n"
+	return alter_text(alter_topic_person(text))
 
 def test_get_edge_weights():
 	docs=[["1", "2"], ["2", "3", "4"], ["5", "1"]]

@@ -7,17 +7,14 @@
 	- Create word clouds of top nouns and noun-phrases.
 
 '''
-import re
 import json
-import subprocess, shlex
 import networkx as nx
 
 from collections import defaultdict
 from pprint import pprint
 from os import listdir, chdir, getcwd, path as p
 from graph_building import get_knowledge_graph
-from utils import alter_token, alter_text, alter_topic_person, replace_by_dict, replace_name
-from textblob import TextBlob
+
 
 def e2docs(entity_text, fulltext_folder, timeblock, word_index_dict):
 	'''
@@ -29,63 +26,18 @@ def e2docs(entity_text, fulltext_folder, timeblock, word_index_dict):
 		TESTED.
 
 	'''
-
 	full_texts = []
 	for date in timeblock.split(","): full_texts+=json.load(open(p.join(fulltext_folder, "%s.json"%date)))
 
 	return [full_texts[i] for i in word_index_dict[entity_text]]
 
 
-def get_tfidf_dict(docs):
+def get_key_graph(timeblock, docs, save_folder=None):
 	'''
-		remove tokens with high document frequency (DF)
-	'''
-	out = defaultdict(int)
-	
-	for doc in docs: 
-		for token in set(doc): token_freq[token]+=1/len(docs)
-	pprint(token_freq)
-	return token_freq
-
-	out, freq_dict = [], get_freq_tokens(docs)
-	for doc in docs:
-		inner = []
-		for token in doc:
-			if freq_dict[token]<0.3: inner.append(token)
-		out.append(inner)
-
-	return out
-
-def texts2docs(texts, timeblock, to_folder):
-	'''
-		texts: [text]. Contribute to a peaking entity of a certain time block.
-		text: string refers to a single full_text attribute of tweet JSON.
-		timeblock: string
+		MAIN running file.
 		
-		remove_freq_tokens=True, so that high df terms are removed. tokens get effectively segregated into distinct topics.
-
-		output:
-		docs - [doc]
-		doc - [token]
-
-		TESTED
-
 	'''
-	def subrun(command): return subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE).communicate()[0]
-	def preprocess(texts): 
-		texts = [re.sub("RT ", "", alter_topic_person(alter_text(text))) for text in texts]
-		texts = [" ".join([replace_by_dict(alter_token(replace_name(token))) for token in text.split(" ")])+"\n" for text in texts]
-		return texts
-
-
-	docs = [TextBlob(text).noun_phrases for text in preprocess(texts)]
-
-	json.dump(docs, open(p.join(to_folder, "%s.json"%timeblock), "w"))
-
-	return docs
-
-def get_key_graph(timeblock, nnps_folder, save_folder):
-	kgraph=get_knowledge_graph(timeblock, docs=json.load(open(p.join(nnps_folder, "%s.json"%timeblock))))
+	kgraph=get_knowledge_graph(timeblock, docs=docs)
 	if save_folder: json.dump(kgraph, open(p.join(save_folder, "%s.json"%timeblock), "w"))
 	return kgraph
 
@@ -96,18 +48,28 @@ def graph2nx(graph):
 
 	'''
 	G = nx.Graph()
-	edges, nodes = [tuple(json.loads(edge))for edge in graph["edge_weights"]], set()
+	nodes, edges = set(), []
+
+	for edge in graph["edge_weights"]: 
+		if "australia" not in edge and "coronavirus" not in edge: edges.append(tuple(json.loads(edge)))
 	for edge in edges: nodes = nodes.union(set(edge))
-
-	nodes.discard("australia")
-	nodes.discard("coronavirus")
-
+	
 	G.add_nodes_from(nodes)
 	G.add_edges_from(edges)
 
 	return G
 
-def get_groups(partition):
+def get_groups(graph):
+	import community as community_louvain
+
+	'''
+		MAIN running file.
+		graph, output of get_key_graph()
+
+	'''
+
+	G = graph2nx(graph)
+	partition = community_louvain.best_partition(G)
 	out = defaultdict(list)
 	for node in partition: out[partition[node]].append(node)
 	return out
@@ -120,10 +82,8 @@ def plot_graph(G):
 
 	#first compute the best partition
 	partition = community_louvain.best_partition(G)
-	groups = get_groups(partition)
-	# draw the graph
+	
 	pos = nx.spring_layout(G)
-	pprint(groups)
 
 	# color the nodes according to their partition
 	cmap = cm.get_cmap('viridis', max(partition.values()) + 1)
@@ -137,5 +97,7 @@ if __name__ == '__main__':
 	from sys import argv
 	# kgraph = get_key_graph("2020-04-04,2020-04-05,2020-04-06,2020-04-07,2020-04-08,2020-04-09,2020-04-10", get_folder_names()[7], save_folder=None)
 	kgraph = json.load(open(p.join(get_folder_names()[8], "%s.json"%argv[1])))
+	groups = get_groups(kgraph)
+	pprint(groups)
 	G = graph2nx(kgraph)
 	plot_graph(G)
